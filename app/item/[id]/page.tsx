@@ -1,5 +1,7 @@
 import { Footer, Header } from "@/components/Chrome";
 import { ItemCard } from "@/components/ItemCard";
+import { MarketGrid } from "@/components/MarketGrid";
+import { PieceActions } from "@/components/PieceActions";
 import { PieceArt } from "@/components/PieceArt";
 import { formatMoney, getItem, relatedItems } from "@/lib/catalog";
 import type { Metadata } from "next";
@@ -71,6 +73,7 @@ export default async function ItemPage({
               {item.mint ? ` · ${item.mint}` : ""}
               {item.metal ? ` · ${item.metal}` : ""}
             </p>
+            <PieceActions catalogId={item.id} />
           </div>
         </div>
 
@@ -124,6 +127,11 @@ export default async function ItemPage({
               </div>
             ))}
           </div>
+        </section>
+
+        <section className="mt-12">
+          <h2 className="mb-4 font-serif text-2xl text-cream">Live on CoinQueen</h2>
+          <MarketGrid catalogId={item.id} />
         </section>
 
         <section className="mt-12">

@@ -3,6 +3,7 @@
 import { useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { catalog, formatMoney, type CatalogItem } from "@/lib/catalog";
+import { useMarket } from "@/lib/localMarket";
 
 type MatchRow = {
   item: CatalogItem;
@@ -32,6 +33,8 @@ export function Scanner() {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<IdentifyResponse | null>(null);
+  const [saved, setSaved] = useState<string | null>(null);
+  const { addToCollection } = useMarket();
   const [hints, setHints] = useState({
     year: "",
     country: "",
@@ -270,14 +273,14 @@ export function Scanner() {
             ) : (
               <ul className="space-y-3">
                 {result.matches.map((row) => (
-                  <li key={row.item.id}>
-                    <Link
-                      href={`/item/${row.item.id}`}
-                      className="block rounded-2xl border border-gold/20 bg-queen-card p-4 transition hover:border-gold"
-                    >
+                  <li
+                    key={row.item.id}
+                    className="rounded-2xl border border-gold/20 bg-queen-card p-4"
+                  >
+                    <Link href={`/item/${row.item.id}`} className="block">
                       <div className="flex items-start justify-between gap-3">
                         <div>
-                          <p className="font-serif text-lg text-cream">{row.item.name}</p>
+                          <p className="font-serif text-lg text-cream hover:text-gold">{row.item.name}</p>
                           <p className="text-sm text-cream/55">{row.reasons.join(" · ")}</p>
                         </div>
                         <p className="text-gold">{formatMoney(row.item.marketMid)}</p>
@@ -286,6 +289,24 @@ export function Scanner() {
                         Range {formatMoney(row.item.marketLow)} – {formatMoney(row.item.marketHigh)}
                       </p>
                     </Link>
+                    <div className="mt-3 flex flex-wrap gap-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          addToCollection(row.item.id);
+                          setSaved(row.item.id);
+                        }}
+                        className="rounded-full border border-gold/30 px-3 py-1.5 text-sm text-cream hover:border-gold"
+                      >
+                        {saved === row.item.id ? "Saved" : "Add to collection"}
+                      </button>
+                      <Link
+                        href={`/sell?item=${row.item.id}`}
+                        className="rounded-full bg-gold px-3 py-1.5 text-sm font-medium text-queen-ink"
+                      >
+                        List for sale
+                      </Link>
+                    </div>
                   </li>
                 ))}
               </ul>

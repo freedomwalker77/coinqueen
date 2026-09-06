@@ -1,15 +1,16 @@
 # CoinQueen
 
-Scan, identify, and price **coins and paper money** — the Card Price King idea for numismatics.
+Scan, identify, price, and **list coins and paper money** — Card Price King for numismatics.
 
-## What’s in the MVP
+## What’s in this version
 
 - Catalog of U.S. and world coins, ancients, and banknotes
-- Item pages with grade ladders, sold comps, and a population snapshot
+- Item pages with grade ladders, sold comps, population, and live listings
 - Scanner: camera or upload, plus year/country/denomination hints
 - Optional photo ID via Gemini (`GEMINI_API_KEY`)
+- Local marketplace: shops, buy-now, auctions, cart, collection, and sell flow
 
-Buying, shops, auctions, and Stripe are not in this first cut.
+Checkout is a browser-local demo. Stripe is not connected yet.
 
 ## Run it
 

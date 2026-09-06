@@ -1,5 +1,6 @@
 import { Footer, Header } from "@/components/Chrome";
 import { ItemCard } from "@/components/ItemCard";
+import { MarketGrid } from "@/components/MarketGrid";
 import { CATEGORIES, catalog, featuredItems, formatMoney, recentSales } from "@/lib/catalog";
 import Link from "next/link";
 
@@ -21,9 +22,8 @@ export default function HomePage() {
                 <span className="block text-gold">Collect with a crown.</span>
               </h1>
               <p className="mt-5 max-w-xl text-lg text-cream/70">
-                CoinQueen is a collector marketplace starter for coins and paper money — the Card Price
-                King idea, rebuilt for numismatics. Identify a piece, see market comps, and browse the
-                catalog.
+                CoinQueen is a collector marketplace for coins and paper money — Card Price King’s loop,
+                rebuilt for numismatics. Scan a piece, see comps, then buy, bid, or list it.
               </p>
               <form action="/catalog" className="mt-8 flex max-w-xl gap-2">
                 <input
@@ -46,10 +46,10 @@ export default function HomePage() {
                   Open the scanner
                 </Link>
                 <Link
-                  href="/catalog"
+                  href="/market"
                   className="rounded-full border border-gold/40 px-6 py-3 text-cream hover:bg-gold/10"
                 >
-                  Browse the catalog
+                  Shop the market
                 </Link>
               </div>
               <dl className="mt-10 grid max-w-lg grid-cols-3 gap-4 text-center">
@@ -75,17 +75,17 @@ export default function HomePage() {
                   denomination.
                 </li>
                 <li>
-                  <span className="font-serif text-gold">2.</span> We match it to the catalog and pull
-                  sold comps plus a grade ladder.
+                  <span className="font-serif text-gold">2.</span> Match it to the catalog and pull sold
+                  comps plus a grade ladder.
                 </li>
                 <li>
-                  <span className="font-serif text-gold">3.</span> Open the piece page for population,
-                  related issues, and the full price band.
+                  <span className="font-serif text-gold">3.</span> Save it to your cabinet, list it, or
+                  buy/bid on a live shop listing.
                 </li>
               </ol>
               <p className="mt-6 text-sm text-cream/45">
-                Buying, shops, auctions, and Stripe payouts can come after this pricing core — the same
-                path Card Price King took from scanner to marketplace.
+                Payments are a local demo for now. Stripe payouts and live eBay/auction comps can plug
+                in next.
               </p>
             </div>
           </div>
@@ -125,6 +125,21 @@ export default function HomePage() {
         </section>
 
         <section className="border-y border-gold/15 bg-queen-deep/80">
+          <div className="mx-auto max-w-6xl px-4 py-14">
+            <div className="mb-6 flex items-end justify-between">
+              <div>
+                <p className="text-xs uppercase tracking-[0.22em] text-gold">Live now</p>
+                <h2 className="font-serif text-3xl text-cream">Marketplace picks</h2>
+              </div>
+              <Link href="/market" className="text-sm text-gold hover:underline">
+                All listings
+              </Link>
+            </div>
+            <MarketGrid limit={6} />
+          </div>
+        </section>
+
+        <section className="border-b border-gold/15 bg-queen-deep/80">
           <div className="mx-auto max-w-6xl px-4 py-14">
             <p className="text-xs uppercase tracking-[0.22em] text-gold">Moving today</p>
             <h2 className="mb-6 font-serif text-3xl text-cream">Recent sold comps</h2>

@@ -1,6 +1,12 @@
+import { CartBadge } from "./CartBadge";
 import Link from "next/link";
 
-const links = [{ href: "/catalog", label: "Catalog" }];
+const links = [
+  { href: "/catalog", label: "Catalog" },
+  { href: "/market", label: "Market" },
+  { href: "/collection", label: "Collection" },
+  { href: "/sell", label: "Sell" },
+];
 
 export function Header() {
   return (
@@ -14,7 +20,7 @@ export function Header() {
             Coin<span className="text-gold">Queen</span>
           </span>
         </Link>
-        <nav className="flex items-center gap-1 text-sm">
+        <nav className="flex flex-wrap items-center justify-end gap-1 text-sm">
           {links.map((link) => (
             <Link
               key={link.href}
@@ -24,6 +30,7 @@ export function Header() {
               {link.label}
             </Link>
           ))}
+          <CartBadge />
           <Link
             href="/scan"
             className="ml-2 rounded-full bg-gold px-4 py-1.5 font-medium text-queen-ink transition hover:bg-gold-bright"
@@ -41,7 +48,7 @@ export function Footer() {
     <footer className="mt-auto border-t border-gold/15 bg-queen-deep">
       <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-cream/50 sm:flex-row sm:items-center sm:justify-between">
         <p>CoinQueen — market prices for coins and paper money.</p>
-        <p>Sample catalog for the MVP. Live comps can plug in later (eBay, auction houses, bullion spots).</p>
+        <p>Local demo marketplace — Stripe and live auction-house comps can plug in later.</p>
       </div>
     </footer>
   );
