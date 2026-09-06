@@ -14,7 +14,7 @@ export function PieceArt({
   return (
     <div
       className={`relative overflow-hidden ${className}`}
-      style={{ background: `radial-gradient(circle at 30% 20%, ${item.accent}55, #140c1f 70%)` }}
+      style={{ background: `radial-gradient(circle at 30% 20%, ${item.accent}66, #e7f3ec 72%)` }}
       aria-hidden
     >
       <svg viewBox="0 0 200 140" className="h-full w-full">

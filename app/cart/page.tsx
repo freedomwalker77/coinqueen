@@ -18,13 +18,13 @@ export default function CartPage() {
     <div className="flex min-h-full flex-col">
       <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        <p className="text-xs uppercase tracking-[0.22em] text-gold">Cart</p>
-        <h1 className="mt-2 font-serif text-4xl text-cream">Checkout demo</h1>
+        <p className="text-xs uppercase tracking-[0.22em] text-money">Cart</p>
+        <h1 className="mt-2 font-serif text-4xl text-money">Checkout demo</h1>
         <p className="mt-2 max-w-2xl text-cream/60">
           No Stripe yet. Completing an order marks buy-now listings sold on this device.
         </p>
         {done ? (
-          <p className="mt-8 rounded-2xl border border-gold/30 bg-queen-card p-6 text-cream">
+          <p className="mt-8 rounded-2xl border border-gold/30 bg-queen-deep p-6 text-cream">
             Order {done} recorded locally.{" "}
             <Link href="/market" className="text-gold hover:underline">
               Back to market
@@ -45,7 +45,7 @@ export default function CartPage() {
               return (
                 <li
                   key={listing.id}
-                  className="flex items-center justify-between rounded-2xl border border-gold/15 bg-queen-card px-4 py-3"
+                  className="flex items-center justify-between rounded-2xl border border-gold/15 bg-queen-deep px-4 py-3"
                 >
                   <div>
                     <p className="text-cream">{item?.shortName ?? listing.catalogId}</p>
@@ -76,7 +76,7 @@ export default function CartPage() {
         ) : null}
         {buyNow.length > 0 ? (
           <div className="mt-8 flex items-center justify-between border-t border-gold/15 pt-6">
-            <p className="font-serif text-2xl text-cream">Total {formatMoney(total)}</p>
+            <p className="font-serif text-2xl text-money">Total {formatMoney(total)}</p>
             <button
               type="button"
               onClick={() => {
@@ -91,7 +91,7 @@ export default function CartPage() {
         ) : null}
         {ready && state.orders.length > 0 ? (
           <section className="mt-12">
-            <h2 className="font-serif text-2xl text-cream">Past demo orders</h2>
+            <h2 className="font-serif text-2xl text-money">Past demo orders</h2>
             <ul className="mt-4 space-y-2 text-sm text-cream/60">
               {state.orders.map((order) => (
                 <li key={order.id}>

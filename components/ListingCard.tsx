@@ -17,12 +17,12 @@ export function ListingCard({ listing }: { listing: Listing }) {
   const inCart = state.cart.includes(listing.id);
 
   return (
-    <article className="overflow-hidden rounded-2xl border border-gold/20 bg-queen-card">
+    <article className="overflow-hidden rounded-2xl border border-money/20 bg-queen shadow-sm">
       <Link href={`/item/${packed.item.id}`}>
         <PieceArt id={packed.item.id} className="h-36 w-full" />
       </Link>
       <div className="space-y-3 p-4">
-        <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.18em] text-gold">
+        <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.18em] text-money">
           <span>{listing.kind === "auction" ? "Auction" : "Buy now"}</span>
           <span className="text-cream/50">{listing.grade}</span>
         </div>

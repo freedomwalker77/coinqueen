@@ -36,7 +36,7 @@ export function CatalogFilters({
           name="q"
           defaultValue={query}
           placeholder="Search year, mint, series, country…"
-          className="w-full rounded-full border border-gold/25 bg-queen-card px-4 py-2.5 text-cream outline-none placeholder:text-cream/35 focus:border-gold"
+          className="w-full rounded-full border border-money/25 bg-queen px-4 py-2.5 text-cream outline-none placeholder:text-cream/40 focus:border-gold"
         />
         <button
           type="submit"
@@ -55,7 +55,7 @@ export function CatalogFilters({
               onClick={() => update({ category: cat.id })}
               className={`rounded-full border px-3 py-1.5 text-sm ${
                 active
-                  ? "border-gold bg-gold/15 text-gold"
+                  ? "border-money bg-money/10 text-money"
                   : "border-gold/20 text-cream/70 hover:border-gold/50"
               }`}
             >

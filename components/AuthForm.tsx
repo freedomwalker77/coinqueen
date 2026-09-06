@@ -5,7 +5,7 @@ import Link from "next/link";
 import { useActionState } from "react";
 
 const inputClass =
-  "mt-1 w-full rounded-xl border border-gold/20 bg-queen-card px-3 py-2 text-cream outline-none focus:border-gold";
+  "mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream outline-none focus:border-gold";
 
 export function SignupForm() {
   const [state, action, pending] = useActionState(signup, undefined);
@@ -22,7 +22,7 @@ export function SignupForm() {
         errors={state?.errors?.password}
         hint="At least 8 characters, with a letter and a number."
       />
-      {state?.message ? <p className="text-sm text-red-300">{state.message}</p> : null}
+      {state?.message ? <p className="text-sm text-red-700">{state.message}</p> : null}
       <button
         disabled={pending}
         type="submit"
@@ -53,7 +53,7 @@ export function LoginForm() {
         autoComplete="current-password"
         errors={state?.errors?.password}
       />
-      {state?.message ? <p className="text-sm text-red-300">{state.message}</p> : null}
+      {state?.message ? <p className="text-sm text-red-700">{state.message}</p> : null}
       <button
         disabled={pending}
         type="submit"
@@ -92,7 +92,7 @@ function Field({
       <input id={name} name={name} type={type} autoComplete={autoComplete} className={inputClass} />
       {hint ? <p className="mt-1 text-xs text-cream/40">{hint}</p> : null}
       {errors?.map((error) => (
-        <p key={error} className="mt-1 text-sm text-red-300">
+        <p key={error} className="mt-1 text-sm text-red-700">
           {error}
         </p>
       ))}

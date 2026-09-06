@@ -14,8 +14,8 @@ export default function CollectionPage() {
     <div className="flex min-h-full flex-col">
       <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        <p className="text-xs uppercase tracking-[0.22em] text-gold">Cabinet</p>
-        <h1 className="mt-2 font-serif text-4xl text-cream">Your collection</h1>
+        <p className="text-xs uppercase tracking-[0.22em] text-money">Cabinet</p>
+        <h1 className="mt-2 font-serif text-4xl text-money">Your collection</h1>
         <p className="mt-2 max-w-2xl text-cream/60">
           Pieces you saved from the scanner or catalog. Signed-in cabinets sync to your
           account.
@@ -36,7 +36,7 @@ export default function CollectionPage() {
               return (
                 <li
                   key={row.id}
-                  className="flex gap-4 overflow-hidden rounded-2xl border border-gold/20 bg-queen-card"
+                  className="flex gap-4 overflow-hidden rounded-2xl border border-money/20 bg-queen-deep"
                 >
                   <PieceArt id={item.id} className="h-28 w-36 shrink-0" />
                   <div className="flex flex-1 flex-col justify-center py-3 pr-4">

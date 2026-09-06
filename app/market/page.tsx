@@ -8,8 +8,8 @@ export default function MarketPage() {
     <div className="flex min-h-full flex-col">
       <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        <p className="text-xs uppercase tracking-[0.22em] text-gold">Marketplace</p>
-        <h1 className="mt-2 font-serif text-4xl text-cream">Buy & bid</h1>
+        <p className="text-xs uppercase tracking-[0.22em] text-money">Marketplace</p>
+        <h1 className="mt-2 font-serif text-4xl text-money">Buy & bid</h1>
         <p className="mt-2 max-w-2xl text-cream/60">
           Verified-shop flavor with buy-now and timed auctions. Checkout is a local demo — nothing is
           charged.

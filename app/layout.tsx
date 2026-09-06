@@ -15,7 +15,7 @@ const playfair = Playfair_Display({
 export const metadata: Metadata = {
   title: "CoinQueen — scan, price, collect coins & paper money",
   description:
-    "Identify coins and banknotes, see market comps, and browse a collector catalog. Card Price King for numismatics.",
+    "Identify coins and banknotes, then price them from eBay last sold and Heritage Auctions.",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

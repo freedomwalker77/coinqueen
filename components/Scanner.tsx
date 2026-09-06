@@ -177,14 +177,14 @@ export function Scanner() {
             {busy ? "Identifying…" : "Identify & price"}
           </button>
         </div>
-        {error ? <p className="text-sm text-red-300">{error}</p> : null}
+        {error ? <p className="text-sm text-red-700">{error}</p> : null}
         <div className="grid gap-3 sm:grid-cols-2">
           <label className="text-sm text-cream/70">
             Year
             <input
               value={hints.year}
               onChange={(event) => setHints({ ...hints, year: event.target.value })}
-              className="mt-1 w-full rounded-xl border border-gold/20 bg-queen-card px-3 py-2 text-cream"
+              className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
               placeholder="1964"
             />
           </label>
@@ -193,7 +193,7 @@ export function Scanner() {
             <input
               value={hints.country}
               onChange={(event) => setHints({ ...hints, country: event.target.value })}
-              className="mt-1 w-full rounded-xl border border-gold/20 bg-queen-card px-3 py-2 text-cream"
+              className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
               placeholder="United States"
             />
           </label>
@@ -202,7 +202,7 @@ export function Scanner() {
             <input
               value={hints.denomination}
               onChange={(event) => setHints({ ...hints, denomination: event.target.value })}
-              className="mt-1 w-full rounded-xl border border-gold/20 bg-queen-card px-3 py-2 text-cream"
+              className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
               placeholder="50 cents / $1"
             />
           </label>
@@ -213,7 +213,7 @@ export function Scanner() {
               onChange={(event) =>
                 setHints({ ...hints, type: event.target.value as typeof hints.type })
               }
-              className="mt-1 w-full rounded-xl border border-gold/20 bg-queen-card px-3 py-2 text-cream"
+              className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
             >
               <option value="">Either</option>
               <option value="coin">Coin</option>
@@ -222,7 +222,7 @@ export function Scanner() {
           </label>
         </div>
         <div>
-          <p className="mb-2 text-xs uppercase tracking-[0.2em] text-gold/80">Try a sample</p>
+          <p className="mb-2 text-xs uppercase tracking-[0.2em] text-money">Try a sample</p>
           <div className="flex flex-wrap gap-2">
             {SAMPLES.map((sample) => (
               <button
@@ -239,7 +239,7 @@ export function Scanner() {
       </div>
 
       <div className="space-y-4">
-        <h2 className="font-serif text-2xl text-cream">Market match</h2>
+        <h2 className="font-serif text-2xl text-money">Market match</h2>
         {!result ? (
           <p className="text-cream/55">
             Results land here: identified piece, mid-market price, sold comps, and a link into the
@@ -256,7 +256,7 @@ export function Scanner() {
               </p>
             )}
             {result.vision && Object.keys(result.vision).length > 0 ? (
-              <div className="rounded-2xl border border-gold/20 bg-queen-card p-4 text-sm text-cream/80">
+              <div className="rounded-2xl border border-gold/20 bg-queen-deep p-4 text-sm text-cream/80">
                 <p className="mb-2 text-xs uppercase tracking-[0.18em] text-gold">Vision guess</p>
                 {Object.entries(result.vision)
                   .filter(([, value]) => value)
@@ -275,7 +275,7 @@ export function Scanner() {
                 {result.matches.map((row) => (
                   <li
                     key={row.item.id}
-                    className="rounded-2xl border border-gold/20 bg-queen-card p-4"
+                    className="rounded-2xl border border-gold/20 bg-queen-deep p-4"
                   >
                     <Link href={`/item/${row.item.id}`} className="block">
                       <div className="flex items-start justify-between gap-3">

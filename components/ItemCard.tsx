@@ -6,11 +6,11 @@ export function ItemCard({ item }: { item: CatalogItem }) {
   return (
     <Link
       href={`/item/${item.id}`}
-      className="group overflow-hidden rounded-2xl border border-gold/20 bg-queen-card shadow-sm transition hover:-translate-y-0.5 hover:border-gold/50 hover:shadow-lg hover:shadow-gold/10"
+      className="group overflow-hidden rounded-2xl border border-money/20 bg-queen shadow-sm transition hover:-translate-y-0.5 hover:border-gold hover:shadow-lg hover:shadow-gold/15"
     >
       <PieceArt id={item.id} className="h-40 w-full" />
       <div className="space-y-2 p-4">
-        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-gold">
+        <div className="flex items-center gap-2 text-[11px] uppercase tracking-[0.18em] text-money">
           <span>{item.type === "coin" ? "Coin" : "Paper"}</span>
           <span className="text-cream/30">·</span>
           <span className="text-cream/55">{item.country}</span>

@@ -4,6 +4,7 @@ import { MarketGrid } from "@/components/MarketGrid";
 import { PieceActions } from "@/components/PieceActions";
 import { PieceArt } from "@/components/PieceArt";
 import { formatMoney, getItem, relatedItems } from "@/lib/catalog";
+import { EBAY_SOLD, HERITAGE, isEbaySold, soldVenue } from "@/lib/comps";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -32,6 +33,8 @@ export default async function ItemPage({
   if (!item) notFound();
   const related = relatedItems(item);
   const popTotal = item.population.reduce((sum, row) => sum + row.count, 0);
+  const ebaySold = item.comps.filter((comp) => isEbaySold(comp.venue));
+  const heritageSold = item.comps.filter((comp) => !isEbaySold(comp.venue));
 
   return (
     <div className="flex min-h-full flex-col">
@@ -47,23 +50,23 @@ export default async function ItemPage({
         <div className="mt-6 grid gap-8 lg:grid-cols-[0.9fr_1.1fr]">
           <PieceArt id={item.id} className="h-72 rounded-3xl border border-gold/20" />
           <div>
-            <p className="text-xs uppercase tracking-[0.22em] text-gold">
+            <p className="text-xs uppercase tracking-[0.22em] text-money">
               {item.country} · {item.rarity}
             </p>
-            <h1 className="mt-2 font-serif text-4xl text-cream">{item.name}</h1>
+            <h1 className="mt-2 font-serif text-4xl text-money">{item.name}</h1>
             <p className="mt-3 text-cream/70">{item.description}</p>
             <dl className="mt-6 grid grid-cols-2 gap-3 text-sm sm:grid-cols-3">
-              <div className="rounded-xl border border-gold/15 bg-queen-card p-3">
+              <div className="rounded-xl border border-gold/15 bg-queen-deep p-3">
                 <dt className="text-cream/40">Mid market</dt>
                 <dd className="font-serif text-2xl text-gold">{formatMoney(item.marketMid)}</dd>
               </div>
-              <div className="rounded-xl border border-gold/15 bg-queen-card p-3">
+              <div className="rounded-xl border border-gold/15 bg-queen-deep p-3">
                 <dt className="text-cream/40">Range</dt>
                 <dd className="text-cream">
                   {formatMoney(item.marketLow)} – {formatMoney(item.marketHigh)}
                 </dd>
               </div>
-              <div className="rounded-xl border border-gold/15 bg-queen-card p-3">
+              <div className="rounded-xl border border-gold/15 bg-queen-deep p-3">
                 <dt className="text-cream/40">Series</dt>
                 <dd className="text-cream">{item.series}</dd>
               </div>
@@ -79,7 +82,7 @@ export default async function ItemPage({
 
         <div className="mt-12 grid gap-8 lg:grid-cols-2">
           <section>
-            <h2 className="font-serif text-2xl text-cream">Grade ladder</h2>
+            <h2 className="font-serif text-2xl text-money">Grade ladder</h2>
             <table className="mt-4 w-full text-sm">
               <tbody>
                 {item.grades.map((row) => (
@@ -92,30 +95,55 @@ export default async function ItemPage({
             </table>
           </section>
           <section>
-            <h2 className="font-serif text-2xl text-cream">Sold & listed comps</h2>
+            <h2 className="font-serif text-2xl text-money">{EBAY_SOLD}</h2>
             <ul className="mt-4 space-y-3">
-              {item.comps.map((comp) => (
-                <li
-                  key={`${comp.date}-${comp.venue}-${comp.price}`}
-                  className="flex items-center justify-between rounded-xl border border-gold/15 bg-queen-card px-4 py-3 text-sm"
-                >
-                  <div>
-                    <p className="text-cream">
-                      {comp.grade} · {comp.venue}
-                    </p>
-                    <p className="text-cream/45">
-                      {comp.date} · {comp.kind}
-                    </p>
-                  </div>
-                  <p className="text-gold">{formatMoney(comp.price)}</p>
-                </li>
-              ))}
+              {ebaySold.length === 0 ? (
+                <li className="text-sm text-cream/55">No eBay last-sold row in this sample yet.</li>
+              ) : (
+                ebaySold.map((comp) => (
+                  <li
+                    key={`${comp.date}-${comp.price}`}
+                    className="flex items-center justify-between rounded-xl border border-money/15 bg-queen-deep px-4 py-3 text-sm"
+                  >
+                    <div>
+                      <p className="text-cream">
+                        {comp.grade} · {soldVenue(comp.venue)}
+                      </p>
+                      <p className="text-cream/50">{comp.date} · sold</p>
+                    </div>
+                    <p className="text-gold">{formatMoney(comp.price)}</p>
+                  </li>
+                ))
+              )}
+            </ul>
+          </section>
+          <section>
+            <h2 className="font-serif text-2xl text-money">{HERITAGE}</h2>
+            <ul className="mt-4 space-y-3">
+              {heritageSold.length === 0 ? (
+                <li className="text-sm text-cream/55">No Heritage realized price in this sample yet.</li>
+              ) : (
+                heritageSold.map((comp) => (
+                  <li
+                    key={`${comp.date}-${comp.price}`}
+                    className="flex items-center justify-between rounded-xl border border-gold/25 bg-queen-deep px-4 py-3 text-sm"
+                  >
+                    <div>
+                      <p className="text-cream">
+                        {comp.grade} · {soldVenue(comp.venue)}
+                      </p>
+                      <p className="text-cream/50">{comp.date} · sold</p>
+                    </div>
+                    <p className="text-gold">{formatMoney(comp.price)}</p>
+                  </li>
+                ))
+              )}
             </ul>
           </section>
         </div>
 
-        <section className="mt-12 rounded-3xl border border-gold/15 bg-queen-card p-6">
-          <h2 className="font-serif text-2xl text-cream">Population on CoinQueen</h2>
+        <section className="mt-12 rounded-3xl border border-gold/15 bg-queen-deep p-6">
+          <h2 className="font-serif text-2xl text-money">Population on CoinQueen</h2>
           <p className="mt-1 text-sm text-cream/50">
             {popTotal} tracked copies in this starter catalog (stand-in for live marketplace supply).
           </p>
@@ -130,12 +158,12 @@ export default async function ItemPage({
         </section>
 
         <section className="mt-12">
-          <h2 className="mb-4 font-serif text-2xl text-cream">Live on CoinQueen</h2>
+          <h2 className="mb-4 font-serif text-2xl text-money">Live on CoinQueen</h2>
           <MarketGrid catalogId={item.id} />
         </section>
 
         <section className="mt-12">
-          <h2 className="mb-4 font-serif text-2xl text-cream">Related pieces</h2>
+          <h2 className="mb-4 font-serif text-2xl text-money">Related pieces</h2>
           <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-4">
             {related.map((piece) => (
               <ItemCard key={piece.id} item={piece} />

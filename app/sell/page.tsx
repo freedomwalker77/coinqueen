@@ -11,8 +11,8 @@ export default async function SellPage() {
     <div className="flex min-h-full flex-col">
       <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        <p className="text-xs uppercase tracking-[0.22em] text-gold">Sell</p>
-        <h1 className="mt-2 font-serif text-4xl text-cream">Open a listing</h1>
+        <p className="text-xs uppercase tracking-[0.22em] text-money">Sell</p>
+        <h1 className="mt-2 font-serif text-4xl text-money">Open a listing</h1>
         <p className="mt-2 max-w-2xl text-cream/60">
           Scan first if you need an ID, then publish a buy-now or auction into your shop.
         </p>
@@ -22,7 +22,7 @@ export default async function SellPage() {
               <SellForm />
             </Suspense>
           ) : (
-            <p className="rounded-2xl border border-gold/25 bg-queen-card p-6 text-cream/80">
+            <p className="rounded-2xl border border-money/25 bg-queen-deep p-6 text-cream/80">
               Create an account to list. Collection and listings then persist with you.{" "}
               <Link href="/signup" className="text-gold hover:underline">
                 Sign up

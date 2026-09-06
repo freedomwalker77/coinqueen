@@ -1,13 +1,14 @@
 @import "tailwindcss";
 
 @theme inline {
-  --color-queen: #140c1f;
-  --color-queen-deep: #0d0814;
-  --color-queen-card: #1c1329;
-  --color-queen-ink: #1a1020;
-  --color-gold: #d4af37;
-  --color-gold-bright: #f0d78c;
-  --color-cream: #f4ead5;
+  --color-queen: #ffffff;
+  --color-queen-deep: #f3f8f4;
+  --color-queen-card: #ffffff;
+  --color-queen-ink: #143528;
+  --color-gold: #c9a227;
+  --color-gold-bright: #e0c15a;
+  --color-money: #1a7a46;
+  --color-cream: #16382b;
   --font-sans: var(--font-geist-sans);
   --font-serif: var(--font-playfair);
   --font-mono: var(--font-geist-mono);

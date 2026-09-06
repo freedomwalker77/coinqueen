@@ -42,7 +42,7 @@ export function SellForm() {
         <select
           value={catalogId}
           onChange={(event) => setCatalogId(event.target.value)}
-          className="mt-1 w-full rounded-xl border border-gold/20 bg-queen-card px-3 py-2 text-cream"
+              className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
         >
           {catalog.map((piece) => (
             <option key={piece.id} value={piece.id}>
@@ -63,7 +63,7 @@ export function SellForm() {
           <input
             value={grade}
             onChange={(event) => setGrade(event.target.value)}
-            className="mt-1 w-full rounded-xl border border-gold/20 bg-queen-card px-3 py-2 text-cream"
+              className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
           />
         </label>
         <label className="text-sm text-cream/70">
@@ -72,7 +72,7 @@ export function SellForm() {
             value={price}
             onChange={(event) => setPrice(event.target.value)}
             placeholder={item ? String(item.marketMid) : "0"}
-            className="mt-1 w-full rounded-xl border border-gold/20 bg-queen-card px-3 py-2 text-cream"
+              className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
           />
         </label>
       </div>
@@ -81,7 +81,7 @@ export function SellForm() {
         <select
           value={kind}
           onChange={(event) => setKind(event.target.value as ListingKind)}
-          className="mt-1 w-full rounded-xl border border-gold/20 bg-queen-card px-3 py-2 text-cream"
+              className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
         >
           <option value="buy_now">Buy now</option>
           <option value="auction">Timed auction</option>
@@ -93,7 +93,7 @@ export function SellForm() {
           value={note}
           onChange={(event) => setNote(event.target.value)}
           rows={3}
-          className="mt-1 w-full rounded-xl border border-gold/20 bg-queen-card px-3 py-2 text-cream"
+              className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
           placeholder="Original surfaces, light hairlines, original envelope…"
         />
       </label>

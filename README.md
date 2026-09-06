@@ -1,17 +1,16 @@
 # CoinQueen
 
-Scan, identify, price, and **list coins and paper money** — Card Price King for numismatics.
+Scan, identify, and **price coins and paper money** from **eBay last sold** and **Heritage Auctions**.
+
+Heritage is the second comps source because it is the main place collectors buy and consign coins *and* paper money at auction (alongside eBay). There is no TCG pricing.
 
 ## What’s in this version
 
-- Catalog of U.S. and world coins, ancients, and banknotes
-- Item pages with grade ladders, sold comps, population, and live listings
-- Scanner: camera or upload, plus year/country/denomination hints
-- Optional photo ID via Gemini (`GEMINI_API_KEY`)
-- Marketplace: shops, buy-now, auctions, cart, collection, and sell flow
-- Accounts: email/password sign-up, session cookie, cabinet and listings saved per user
+- White layout with money-green type and gold prices/accents
+- Catalog, scanner, market, collection, and accounts
+- Sold comps labeled as eBay last sold or Heritage Auctions
 
-Checkout is still a demo (no Stripe yet).
+Checkout is still a demo (no Stripe yet). Live eBay/Heritage APIs can replace the sample sold rows later.
 
 ## Run it
 

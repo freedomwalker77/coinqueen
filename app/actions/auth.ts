@@ -10,7 +10,7 @@ import {
 import { createUser, findUserByEmail } from "@/lib/db";
 import { createSession, deleteSession } from "@/lib/session";
 
-export async function signup(state: AuthFormState, formData: FormData) {
+export async function signup(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const validated = SignupFormSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),
@@ -35,7 +35,7 @@ export async function signup(state: AuthFormState, formData: FormData) {
   redirect("/collection");
 }
 
-export async function login(state: AuthFormState, formData: FormData) {
+export async function login(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const validated = LoginFormSchema.safeParse({
     email: formData.get("email"),
     password: formData.get("password"),

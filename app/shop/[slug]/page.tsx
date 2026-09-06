@@ -21,14 +21,14 @@ export default async function ShopPage({
     <div className="flex min-h-full flex-col">
       <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        <p className="text-xs uppercase tracking-[0.22em] text-gold">Shop</p>
-        <h1 className="mt-2 font-serif text-4xl text-cream">{shop.name}</h1>
+        <p className="text-xs uppercase tracking-[0.22em] text-money">Shop</p>
+        <h1 className="mt-2 font-serif text-4xl text-money">{shop.name}</h1>
         <p className="mt-2 max-w-2xl text-cream/60">{shop.blurb}</p>
         <p className="mt-3 text-sm text-gold">
           {shop.rating.toFixed(1)} · {shop.reviews} reviews
         </p>
         {listed ? (
-          <p className="mt-6 rounded-2xl border border-gold/30 bg-queen-card px-4 py-3 text-sm text-cream">
+          <p className="mt-6 rounded-2xl border border-gold/30 bg-queen-deep px-4 py-3 text-sm text-cream">
             Listing published to your account shop.
           </p>
         ) : null}

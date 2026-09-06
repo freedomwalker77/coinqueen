@@ -15,11 +15,11 @@ export default async function CatalogPage({
     <div className="flex min-h-full flex-col">
       <Header />
       <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-10">
-        <p className="text-xs uppercase tracking-[0.22em] text-gold">Price guide</p>
-        <h1 className="mt-2 font-serif text-4xl text-cream">Catalog</h1>
-        <p className="mt-2 max-w-2xl text-cream/60">
-          Browse U.S. and world coins, ancients, and paper money. Mid-market prices are starter comps —
-          not a bid/ask live feed yet.
+        <p className="text-xs uppercase tracking-[0.22em] text-money">Price guide</p>
+        <h1 className="mt-2 font-serif text-4xl text-money">Catalog</h1>
+        <p className="mt-2 max-w-2xl text-cream/70">
+          Browse U.S. and world coins, ancients, and paper money. Mid-market prices are built from eBay
+          last sold and Heritage Auctions realized prices.
         </p>
         <div className="mt-8">
           <CatalogFilters query={q} category={category} />

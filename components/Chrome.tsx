@@ -11,13 +11,13 @@ const links = [
 
 export function Header() {
   return (
-    <header className="sticky top-0 z-40 border-b border-gold/15 bg-queen/90 backdrop-blur-md">
+    <header className="sticky top-0 z-40 border-b border-money/15 bg-queen/95 backdrop-blur-md">
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <Link href="/" className="flex items-center gap-2">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-gold/60 bg-gold/15 font-serif text-lg text-gold">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full border border-gold/70 bg-money/10 font-serif text-lg text-gold">
             ♕
           </span>
-          <span className="font-serif text-xl tracking-wide text-cream">
+          <span className="font-serif text-xl tracking-wide text-money">
             Coin<span className="text-gold">Queen</span>
           </span>
         </Link>
@@ -26,7 +26,7 @@ export function Header() {
             <Link
               key={link.href}
               href={link.href}
-              className="rounded-full px-3 py-1.5 text-cream/75 transition hover:bg-gold/10 hover:text-gold"
+              className="rounded-full px-3 py-1.5 text-cream/80 transition hover:bg-money/10 hover:text-money"
             >
               {link.label}
             </Link>
@@ -47,10 +47,10 @@ export function Header() {
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-gold/15 bg-queen-deep">
-      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-cream/50 sm:flex-row sm:items-center sm:justify-between">
-        <p>CoinQueen — market prices for coins and paper money.</p>
-        <p>Local demo marketplace — Stripe and live auction-house comps can plug in later.</p>
+    <footer className="mt-auto border-t border-money/15 bg-queen-deep">
+      <div className="mx-auto flex max-w-6xl flex-col gap-2 px-4 py-8 text-sm text-cream/55 sm:flex-row sm:items-center sm:justify-between">
+        <p>CoinQueen — coins and paper money, priced from eBay last sold and Heritage Auctions.</p>
+        <p>Checkout is still a local demo. Stripe can plug in next.</p>
       </div>
     </footer>
   );
