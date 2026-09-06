@@ -1,51 +1,30 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import { MY_SHOP, SEED_LISTINGS, type Listing, type ListingKind } from "./market";
+import { getAccount, loadAccountMarket, saveAccountMarket } from "@/app/actions/market";
+import type { SessionUser } from "@/lib/definitions";
+import { MY_SHOP, type Listing, type ListingKind } from "./market";
+import {
+  emptyMarket,
+  liveListings,
+  type CollectionItem,
+  type MarketState,
+  type Order,
+} from "./marketState";
 
 const KEY = "coinqueen-market-v1";
 const EVENT = "coinqueen-market";
 
-export type CollectionItem = {
-  id: string;
-  catalogId: string;
-  grade: string;
-  addedAt: string;
-};
-
-export type Order = {
-  id: string;
-  listingIds: string[];
-  total: number;
-  createdAt: string;
-};
-
-export type MarketState = {
-  listings: Listing[];
-  soldSeedIds: string[];
-  collection: CollectionItem[];
-  cart: string[];
-  orders: Order[];
-  bids: Record<string, { amount: number; count: number }>;
-};
-
-const empty: MarketState = {
-  listings: [],
-  soldSeedIds: [],
-  collection: [],
-  cart: [],
-  orders: [],
-  bids: {},
-};
+export type { CollectionItem, MarketState, Order };
 
 function load(): MarketState {
-  if (typeof window === "undefined") return empty;
+  if (typeof window === "undefined") return emptyMarket;
   try {
     const raw = localStorage.getItem(KEY);
-    if (!raw) return empty;
-    return { ...empty, ...JSON.parse(raw) } as MarketState;
+    if (!raw) return emptyMarket;
+    return { ...emptyMarket, ...JSON.parse(raw) } as MarketState;
   } catch {
-    return empty;
+    return emptyMarket;
   }
 }
 
@@ -54,27 +33,37 @@ function persist(next: MarketState) {
   window.dispatchEvent(new Event(EVENT));
 }
 
-export function liveListings(state: MarketState): Listing[] {
-  const sold = new Set(state.soldSeedIds);
-  const seed = SEED_LISTINGS.filter((row) => !sold.has(row.id)).map((row) => {
-    const overlay = state.bids[row.id];
-    if (!overlay) return row;
-    return { ...row, price: overlay.amount, bids: overlay.count };
-  });
-  return [...state.listings, ...seed].sort((a, b) => b.createdAt.localeCompare(a.createdAt));
-}
+export { liveListings };
 
 export function useMarket() {
-  const [state, setState] = useState<MarketState>(empty);
+  const [state, setState] = useState<MarketState>(emptyMarket);
   const [ready, setReady] = useState(false);
+  const [account, setAccount] = useState<SessionUser | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
+    async function boot() {
+      const local = load();
+      const user = await getAccount();
+      if (cancelled) return;
+      setAccount(user);
+      if (user) {
+        const merged = await loadAccountMarket(local);
+        if (cancelled) return;
+        const next = merged ?? local;
+        persist(next);
+        setState(next);
+      } else {
+        setState(local);
+      }
+      setReady(true);
+    }
+    void boot();
     const refresh = () => setState(load());
-    refresh();
-    setReady(true);
     window.addEventListener(EVENT, refresh);
     window.addEventListener("storage", refresh);
     return () => {
+      cancelled = true;
       window.removeEventListener(EVENT, refresh);
       window.removeEventListener("storage", refresh);
     };
@@ -84,9 +73,11 @@ export function useMarket() {
     const next = mutator(load());
     persist(next);
     setState(next);
+    if (account) void saveAccountMarket(next);
   }
 
   const listings = liveListings(state);
+  const shopSlug = account?.shopSlug ?? MY_SHOP.slug;
 
   function addToCollection(catalogId: string, grade = "Raw") {
     update((prev) => ({
@@ -120,7 +111,7 @@ export function useMarket() {
     const listing: Listing = {
       id: `user-${Date.now()}`,
       catalogId: input.catalogId,
-      shopSlug: MY_SHOP.slug,
+      shopSlug,
       grade: input.grade,
       price: input.price,
       kind: input.kind,
@@ -178,14 +169,16 @@ export function useMarket() {
       createdAt: new Date().toISOString(),
     };
     const ids = new Set(order.listingIds);
-    persist({
+    const next = {
       ...prev,
       cart: prev.cart.filter((id) => !ids.has(id)),
       soldSeedIds: [...prev.soldSeedIds, ...order.listingIds.filter((id) => id.startsWith("seed-"))],
       listings: prev.listings.filter((row) => !ids.has(row.id)),
       orders: [order, ...prev.orders],
-    });
-    setState(load());
+    };
+    persist(next);
+    setState(next);
+    if (account) void saveAccountMarket(next);
     return order;
   }
 
@@ -194,8 +187,10 @@ export function useMarket() {
 
   return {
     ready,
+    account,
     state,
     listings,
+    shopSlug,
     addToCollection,
     removeFromCollection,
     publishListing,
