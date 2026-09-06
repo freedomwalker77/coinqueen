@@ -189,8 +189,30 @@ export const SEED_LISTINGS: Listing[] = [
   },
 ];
 
+export function shopFromAccount(name: string, slug: string): Shop {
+  return {
+    slug,
+    name: `${name}'s shop`,
+    rating: 5,
+    reviews: 0,
+    blurb: "Collector shop on CoinQueen.",
+  };
+}
+
 export function getShop(slug: string) {
-  return SHOPS.find((shop) => shop.slug === slug);
+  const known = SHOPS.find((shop) => shop.slug === slug);
+  if (known) return known;
+  if (!slug) return undefined;
+  const label = slug
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+  return {
+    slug,
+    name: slug === MY_SHOP.slug ? MY_SHOP.name : `${label}`,
+    rating: 5,
+    reviews: 0,
+    blurb: "Collector shop on CoinQueen.",
+  };
 }
 
 export function listingWithItem(listing: Listing): (Listing & { item: CatalogItem }) | null {

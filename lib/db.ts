@@ -1,7 +1,8 @@
 import "server-only";
 
-import { mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
+import type { Listing } from "./market";
 import { emptyMarket, type MarketState } from "./marketState";
 
 export type UserRecord = {
@@ -82,6 +83,21 @@ export function loadUserMarket(userId: string): MarketState {
 export function saveUserMarket(userId: string, state: MarketState) {
   ensureDirs();
   writeFileSync(marketPath(userId), JSON.stringify(state));
+}
+
+export function loadAllUserListings() {
+  ensureDirs();
+  const listings: Listing[] = [];
+  for (const file of readdirSync(marketsDir)) {
+    if (!file.endsWith(".json")) continue;
+    try {
+      const state = JSON.parse(readFileSync(path.join(marketsDir, file), "utf8")) as MarketState;
+      listings.push(...(state.listings ?? []));
+    } catch {
+      /* skip a bad file */
+    }
+  }
+  return listings;
 }
 
 export function slugifyShop(name: string, userId: string) {

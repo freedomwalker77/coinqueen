@@ -1,6 +1,7 @@
 import { Footer, Header } from "@/components/Chrome";
 import { MarketGrid } from "@/components/MarketGrid";
-import { getShop } from "@/lib/market";
+import { findUserByShopSlug } from "@/lib/db";
+import { getShop, shopFromAccount } from "@/lib/market";
 import { notFound } from "next/navigation";
 
 export default async function ShopPage({
@@ -12,7 +13,8 @@ export default async function ShopPage({
 }) {
   const { slug } = await params;
   const { listed } = await searchParams;
-  const shop = getShop(slug);
+  const owner = findUserByShopSlug(slug);
+  const shop = owner ? shopFromAccount(owner.name, owner.shopSlug) : getShop(slug);
   if (!shop) notFound();
 
   return (
@@ -27,7 +29,7 @@ export default async function ShopPage({
         </p>
         {listed ? (
           <p className="mt-6 rounded-2xl border border-gold/30 bg-queen-card px-4 py-3 text-sm text-cream">
-            Listing published. It appears below on this device.
+            Listing published to your account shop.
           </p>
         ) : null}
         <div className="mt-10">

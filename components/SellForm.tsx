@@ -10,7 +10,7 @@ export function SellForm() {
   const params = useSearchParams();
   const router = useRouter();
   const preset = params.get("item") ?? catalog[0]?.id ?? "";
-  const { publishListing } = useMarket();
+  const { publishListing, shopSlug, account, ready } = useMarket();
   const [catalogId, setCatalogId] = useState(preset);
   const [grade, setGrade] = useState("AU-50");
   const [price, setPrice] = useState("");
@@ -34,7 +34,7 @@ export function SellForm() {
         const amount = Number(price);
         if (!catalogId || !Number.isFinite(amount) || amount <= 0) return;
         const listing = publishListing({ catalogId, grade, price: amount, kind, note });
-        router.push(`/shop/your-shop?listed=${listing.id}`);
+        router.push(`/shop/${listing.shopSlug}?listed=${listing.id}`);
       }}
     >
       <label className="block text-sm text-cream/70">
@@ -104,7 +104,9 @@ export function SellForm() {
         Publish listing
       </button>
       <p className="text-sm text-cream/45">
-        Listings stay on this browser (local demo). Stripe payouts are not wired yet.
+        {ready && account
+          ? `Publishes to ${shopSlug}. Stripe payouts are not wired yet.`
+          : "Sign in to publish into your account shop."}
       </p>
     </form>
   );

@@ -1,9 +1,10 @@
 "use client";
 
-import { ListingCard } from "./ListingCard";
+import { getPublicListings } from "@/app/actions/market";
 import { useMarket } from "@/lib/localMarket";
-import { SEED_LISTINGS } from "@/lib/market";
-import type { Listing } from "@/lib/market";
+import { SEED_LISTINGS, type Listing } from "@/lib/market";
+import { useEffect, useState } from "react";
+import { ListingCard } from "./ListingCard";
 
 export function MarketGrid({
   catalogId,
@@ -15,7 +16,21 @@ export function MarketGrid({
   limit?: number;
 }) {
   const { ready, listings } = useMarket();
-  const source: Listing[] = ready ? listings : SEED_LISTINGS;
+  const [publicListings, setPublicListings] = useState<Listing[]>([]);
+
+  useEffect(() => {
+    void getPublicListings().then(setPublicListings);
+  }, []);
+
+  const seen = new Set<string>();
+  const source: Listing[] = [];
+  for (const row of [...(ready ? listings : SEED_LISTINGS), ...publicListings]) {
+    if (seen.has(row.id)) continue;
+    seen.add(row.id);
+    source.push(row);
+  }
+  source.sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+
   let rows = source;
   if (catalogId) rows = rows.filter((row) => row.catalogId === catalogId);
   if (shopSlug) rows = rows.filter((row) => row.shopSlug === shopSlug);

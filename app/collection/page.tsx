@@ -17,7 +17,8 @@ export default function CollectionPage() {
         <p className="text-xs uppercase tracking-[0.22em] text-gold">Cabinet</p>
         <h1 className="mt-2 font-serif text-4xl text-cream">Your collection</h1>
         <p className="mt-2 max-w-2xl text-cream/60">
-          Pieces you saved from the scanner or catalog. Stored in this browser only.
+          Pieces you saved from the scanner or catalog. Signed-in cabinets sync to your
+          account.
         </p>
         {rows.length === 0 ? (
           <p className="mt-10 text-cream/55">

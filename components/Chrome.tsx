@@ -1,3 +1,4 @@
+import { AuthStatus } from "./AuthStatus";
 import { CartBadge } from "./CartBadge";
 import Link from "next/link";
 
@@ -31,6 +32,7 @@ export function Header() {
             </Link>
           ))}
           <CartBadge />
+          <AuthStatus />
           <Link
             href="/scan"
             className="ml-2 rounded-full bg-gold px-4 py-1.5 font-medium text-queen-ink transition hover:bg-gold-bright"

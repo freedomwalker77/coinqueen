@@ -1,6 +1,6 @@
 "use server";
 
-import { loadUserMarket, saveUserMarket } from "@/lib/db";
+import { loadAllUserListings, loadUserMarket, saveUserMarket } from "@/lib/db";
 import { emptyMarket, mergeMarkets, type MarketState } from "@/lib/marketState";
 import { getSessionUser } from "@/lib/session";
 
@@ -28,4 +28,8 @@ export async function requireAccountMarket() {
   const user = await getSessionUser();
   if (!user) return { user: null, market: emptyMarket };
   return { user, market: loadUserMarket(user.id) };
+}
+
+export async function getPublicListings() {
+  return loadAllUserListings();
 }
