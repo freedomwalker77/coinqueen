@@ -1,6 +1,7 @@
 import { NextResponse } from "next/server";
 import { getItem } from "@/lib/catalog";
 import { findListing, payoutAccountId } from "@/lib/connect";
+import { isSampleListing } from "@/lib/market";
 import { appOrigin, applicationFeeCents, getStripe, stripeEnabled, toStripeCents } from "@/lib/stripe";
 
 export async function GET() {
@@ -20,10 +21,16 @@ export async function POST(request: Request) {
   const ids = [...new Set(body.listingIds ?? [])];
   const lines = ids
     .map((id) => findListing(id))
-    .filter((row): row is NonNullable<typeof row> => Boolean(row && row.kind === "buy_now"));
+    .filter(
+      (row): row is NonNullable<typeof row> =>
+        Boolean(row && row.kind === "buy_now" && !isSampleListing(row)),
+    );
 
   if (lines.length === 0) {
-    return NextResponse.json({ error: "No buy-now listings to check out." }, { status: 400 });
+    return NextResponse.json(
+      { error: "Sample catalog lots are not for sale. Checkout only works for real shop listings." },
+      { status: 400 },
+    );
   }
 
   const origin = await appOrigin(request);

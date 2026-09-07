@@ -3,7 +3,7 @@ import "server-only";
 import type { ConnectStatus } from "./definitions";
 import { isConnectCountry, stripeCountryParam } from "./countries";
 import { findUserByShopSlug, loadAllUserListings, updateUser, type UserRecord } from "./db";
-import { SEED_LISTINGS, type Listing } from "./market";
+import { SEED_LISTINGS, isSampleListing, type Listing } from "./market";
 import { appOrigin, getStripe, toStripeCents } from "./stripe";
 import { sellerPayoutCents } from "./stripeFee";
 
@@ -202,7 +202,7 @@ export async function fulfillSellerPayouts(sessionId: string): Promise<PayoutRes
   const byAccount = new Map<string, { listingIds: string[]; cents: number }>();
   for (const id of listingIds) {
     const listing = findListing(id);
-    if (!listing || listing.kind !== "buy_now") continue;
+    if (!listing || listing.kind !== "buy_now" || isSampleListing(listing)) continue;
     const destination = payoutAccountId(listing);
     if (!destination) continue;
     const cents = sellerPayoutCents(toStripeCents(listing.price));

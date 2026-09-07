@@ -24,6 +24,10 @@ export type Listing = {
   seed: boolean;
 };
 
+export function isSampleListing(listing: { seed?: boolean; id: string }) {
+  return listing.seed === true || listing.id.startsWith("seed-");
+}
+
 export const MY_SHOP: Shop = {
   slug: "your-shop",
   name: "Your MyVaultExchange shop",
@@ -99,7 +103,7 @@ export const SEED_LISTINGS: Listing[] = [
     catalogId: "1901-liberty-head-nickel",
     shopSlug: "binder-queen",
     grade: "F-12",
-    price: 0.5,
+    price: 6,
     kind: "buy_now",
     bids: 0,
     note: "Full date, even wear, typical gray nickel surfaces.",

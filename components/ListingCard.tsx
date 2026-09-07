@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatMoney } from "@/lib/catalog";
-import { getShop, listingWithItem, type Listing } from "@/lib/market";
+import { getShop, isSampleListing, listingWithItem, type Listing } from "@/lib/market";
 import { useMarket } from "@/lib/localMarket";
 import { PieceArt } from "./PieceArt";
 
@@ -23,7 +23,9 @@ export function ListingCard({ listing }: { listing: Listing }) {
       </Link>
       <div className="space-y-3 p-4">
         <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.18em] text-money">
-          <span>{listing.kind === "auction" ? "Auction" : "Buy now"}</span>
+          <span>
+            {isSampleListing(listing) ? "Sample" : listing.kind === "auction" ? "Auction" : "Buy now"}
+          </span>
           <span className="text-cream/50">{listing.grade}</span>
         </div>
         <Link href={`/item/${packed.item.id}`} className="font-serif text-lg text-cream hover:text-gold">
@@ -42,7 +44,11 @@ export function ListingCard({ listing }: { listing: Listing }) {
             : ""}
         </p>
         <p className="font-serif text-2xl text-gold">{formatMoney(listing.price)}</p>
-        {listing.kind === "auction" ? (
+        {isSampleListing(listing) ? (
+          <p className="rounded-full border border-money/25 px-4 py-2 text-center text-sm text-cream/55">
+            Sample lot · not for sale
+          </p>
+        ) : listing.kind === "auction" ? (
           <div className="space-y-2">
             <p className="text-xs text-cream/45">
               {listing.bids} bid{listing.bids === 1 ? "" : "s"}

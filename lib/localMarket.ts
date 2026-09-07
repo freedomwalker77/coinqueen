@@ -3,7 +3,7 @@
 import { useEffect, useState } from "react";
 import { getAccount, loadAccountMarket, saveAccountMarket } from "@/app/actions/market";
 import type { SessionUser } from "@/lib/definitions";
-import { MY_SHOP, type Listing, type ListingKind } from "./market";
+import { MY_SHOP, isSampleListing, type Listing, type ListingKind } from "./market";
 import {
   emptyMarket,
   liveListings,
@@ -126,6 +126,8 @@ export function useMarket() {
   }
 
   function addToCart(listingId: string) {
+    const listing = listings.find((row) => row.id === listingId);
+    if (!listing || isSampleListing(listing)) return;
     update((prev) => ({
       ...prev,
       cart: prev.cart.includes(listingId) ? prev.cart : [...prev.cart, listingId],
@@ -139,12 +141,8 @@ export function useMarket() {
   function placeBid(listingId: string, amount: number) {
     update((prev) => {
       const current = liveListings(prev).find((row) => row.id === listingId);
-      if (!current || current.kind !== "auction" || amount <= current.price) return prev;
-      if (current.seed) {
-        return {
-          ...prev,
-          bids: { ...prev.bids, [listingId]: { amount, count: current.bids + 1 } },
-        };
+      if (!current || current.kind !== "auction" || amount <= current.price || isSampleListing(current)) {
+        return prev;
       }
       return {
         ...prev,
@@ -159,7 +157,7 @@ export function useMarket() {
     const prev = load();
     const wanted = new Set(listingIds ?? prev.cart);
     const lines = liveListings(prev).filter(
-      (row) => wanted.has(row.id) && row.kind === "buy_now",
+      (row) => wanted.has(row.id) && row.kind === "buy_now" && !isSampleListing(row),
     );
     if (lines.length === 0) return null;
     const total = lines.reduce((sum, row) => sum + row.price, 0);

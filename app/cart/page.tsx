@@ -3,6 +3,7 @@
 import { Footer, Header } from "@/components/Chrome";
 import { formatMoney, getItem } from "@/lib/catalog";
 import { liveListings, useMarket } from "@/lib/localMarket";
+import { isSampleListing } from "@/lib/market";
 import Link from "next/link";
 import { useEffect, useState } from "react";
 
@@ -13,8 +14,9 @@ export default function CartPage() {
   const [paying, setPaying] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const listings = ready ? liveListings(state).filter((row) => state.cart.includes(row.id)) : [];
-  const buyNow = listings.filter((row) => row.kind === "buy_now");
-  const auctions = listings.filter((row) => row.kind === "auction");
+  const samples = listings.filter((row) => isSampleListing(row));
+  const buyNow = listings.filter((row) => row.kind === "buy_now" && !isSampleListing(row));
+  const auctions = listings.filter((row) => row.kind === "auction" && !isSampleListing(row));
   const total = buyNow.reduce((sum, row) => sum + row.price, 0);
 
   useEffect(() => {
@@ -80,7 +82,12 @@ export default function CartPage() {
                   <div>
                     <p className="text-cream">{item?.shortName ?? listing.catalogId}</p>
                     <p className="text-sm text-cream/50">
-                      {listing.grade} · {listing.kind === "auction" ? "Auction (bid on the listing)" : "Buy now"}
+                      {listing.grade} ·{" "}
+                      {isSampleListing(listing)
+                        ? "Sample · not for sale"
+                        : listing.kind === "auction"
+                          ? "Auction (bid on the listing)"
+                          : "Buy now"}
                     </p>
                   </div>
                   <div className="flex items-center gap-4">
@@ -98,6 +105,12 @@ export default function CartPage() {
             })}
           </ul>
         )}
+        {samples.length > 0 ? (
+          <p className="mt-4 text-sm text-cream/50">
+            Sample catalog lots are display-only and cannot be purchased. Remove them or leave them — they
+            are not included in Stripe checkout.
+          </p>
+        ) : null}
         {auctions.length > 0 ? (
           <p className="mt-4 text-sm text-cream/50">
             Auction lots stay in the cart until you remove them — bid on the market card instead of
