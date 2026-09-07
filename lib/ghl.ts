@@ -5,12 +5,13 @@ import type { UserRecord } from "./db";
 const GHL_API = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const AUTH_PREFIX = "mve1.";
+const NOTE_PREFIX = "MVE_AUTH:";
 
 type GhlContact = {
   id?: string;
   email?: string;
   website?: string;
-  contact?: { id?: string; website?: string };
+  contact?: { id?: string; website?: string; email?: string };
 };
 
 function ghlAuth() {
@@ -45,9 +46,15 @@ function splitName(name: string) {
   return { firstName, lastName, name: name.trim() };
 }
 
-function encodeAuth(user: UserRecord) {
-  const payload = AUTH_PREFIX + Buffer.from(JSON.stringify(user), "utf8").toString("base64url");
-  return `https://myvaultexchange.com/?mve=${payload}`;
+function compactUser(user: UserRecord): UserRecord {
+  return {
+    id: user.id,
+    name: user.name,
+    email: user.email.toLowerCase(),
+    passwordHash: user.passwordHash,
+    shopSlug: user.shopSlug,
+    createdAt: user.createdAt,
+  };
 }
 
 function decodePayload(raw: string): UserRecord | null {
@@ -74,11 +81,22 @@ function decodeAuth(website?: string): UserRecord | null {
   return null;
 }
 
+function decodeNote(body?: string): UserRecord | null {
+  if (!body?.startsWith(NOTE_PREFIX)) return null;
+  try {
+    const user = JSON.parse(body.slice(NOTE_PREFIX.length)) as UserRecord;
+    if (!user?.id || !user.email || !user.passwordHash) return null;
+    return user;
+  } catch {
+    return null;
+  }
+}
+
 function contactId(row: GhlContact | null | undefined) {
   return row?.id || row?.contact?.id || "";
 }
 
-async function upsertContactRecord(input: { name: string; email: string; website?: string }) {
+async function upsertContactRecord(input: { name: string; email: string }) {
   const auth = ghlAuth();
   if (!auth) return null;
   const { firstName, lastName, name } = splitName(input.name);
@@ -92,7 +110,7 @@ async function upsertContactRecord(input: { name: string; email: string; website
       lastName,
       source: "MyVaultExchange",
       tags: ["myvaultexchange", "site-signup"],
-      website: input.website,
+      website: "https://myvaultexchange.com",
     }),
   });
   if (!response.ok) {
@@ -100,6 +118,53 @@ async function upsertContactRecord(input: { name: string; email: string; website
     return null;
   }
   return (await response.json()) as GhlContact;
+}
+
+async function findContactByEmail(email: string) {
+  const auth = ghlAuth();
+  if (!auth) return null;
+  const lookup = new URL(`${GHL_API}/contacts/lookup`);
+  lookup.searchParams.set("locationId", auth.locationId);
+  lookup.searchParams.set("email", email.toLowerCase());
+  let response = await ghlFetch(lookup.toString(), auth.key);
+  if (!response.ok) {
+    const search = new URL(`${GHL_API}/contacts/`);
+    search.searchParams.set("locationId", auth.locationId);
+    search.searchParams.set("query", email.toLowerCase());
+    search.searchParams.set("limit", "5");
+    response = await ghlFetch(search.toString(), auth.key);
+  }
+  if (!response.ok) return null;
+  const json = (await response.json()) as { contacts?: GhlContact[]; contact?: GhlContact } & GhlContact;
+  const rows = json.contacts ?? (json.contact ? [json.contact] : json.id ? [json] : []);
+  const match = rows.find((row) => (row.email || row.contact?.email || "").toLowerCase() === email.toLowerCase());
+  return match ?? rows[0] ?? null;
+}
+
+async function saveAuthNote(contactIdValue: string, user: UserRecord) {
+  const auth = ghlAuth();
+  if (!auth) return false;
+  const body = NOTE_PREFIX + JSON.stringify(compactUser(user));
+  const create = await ghlFetch(`${GHL_API}/contacts/${contactIdValue}/notes`, auth.key, {
+    method: "POST",
+    body: JSON.stringify({ body, title: "MyVaultExchange account" }),
+  });
+  if (create.ok) return true;
+  console.error("GHL note create failed", create.status);
+  return false;
+}
+
+async function loadAuthFromNotes(contactIdValue: string) {
+  const auth = ghlAuth();
+  if (!auth) return null;
+  const response = await ghlFetch(`${GHL_API}/contacts/${contactIdValue}/notes`, auth.key);
+  if (!response.ok) return null;
+  const json = (await response.json()) as { notes?: Array<{ body?: string }> };
+  for (const note of json.notes ?? []) {
+    const user = decodeNote(note.body);
+    if (user) return user;
+  }
+  return null;
 }
 
 /** Create or update a GHL contact. Never throws. */
@@ -115,20 +180,13 @@ export async function upsertGhlContact(input: { name: string; email: string }) {
 export async function persistGhlAccount(user: UserRecord) {
   if (!ghlAuth()) return false;
   try {
-    const row = await upsertContactRecord({
-      name: user.name,
-      email: user.email,
-      website: encodeAuth(user),
-    });
-    const id = contactId(row);
-    if (!id) return Boolean(row);
-    const auth = ghlAuth();
-    if (!auth) return false;
-    const update = await ghlFetch(`${GHL_API}/contacts/${id}`, auth.key, {
-      method: "PUT",
-      body: JSON.stringify({ website: encodeAuth(user) }),
-    });
-    if (!update.ok) console.error("GHL contact update failed", update.status);
+    const row = await upsertContactRecord({ name: user.name, email: user.email });
+    const id = contactId(row) || contactId(await findContactByEmail(user.email));
+    if (!id) {
+      console.error("GHL persist account missing contact id");
+      return false;
+    }
+    await saveAuthNote(id, user);
     return true;
   } catch (error) {
     console.error("GHL persist account error", error);
@@ -137,28 +195,16 @@ export async function persistGhlAccount(user: UserRecord) {
 }
 
 export async function loadGhlAccount(email: string): Promise<UserRecord | null> {
-  const auth = ghlAuth();
-  if (!auth) return null;
+  if (!ghlAuth()) return null;
   try {
-    const lookup = new URL(`${GHL_API}/contacts/lookup`);
-    lookup.searchParams.set("locationId", auth.locationId);
-    lookup.searchParams.set("email", email.toLowerCase());
-    let response = await ghlFetch(lookup.toString(), auth.key);
-    if (!response.ok) {
-      const search = new URL(`${GHL_API}/contacts/`);
-      search.searchParams.set("locationId", auth.locationId);
-      search.searchParams.set("query", email.toLowerCase());
-      search.searchParams.set("limit", "5");
-      response = await ghlFetch(search.toString(), auth.key);
-    }
-    if (!response.ok) return null;
-    const json = (await response.json()) as { contacts?: GhlContact[]; contact?: GhlContact } & GhlContact;
-    const rows = json.contacts ?? (json.contact ? [json.contact] : json.id ? [json] : []);
-    for (const row of rows) {
-      const website = row.website || row.contact?.website;
-      const user = decodeAuth(website);
-      if (user && user.email === email.toLowerCase()) return user;
-    }
+    const row = await findContactByEmail(email);
+    if (!row) return null;
+    const fromSite = decodeAuth(row.website || row.contact?.website);
+    if (fromSite && fromSite.email === email.toLowerCase()) return fromSite;
+    const id = contactId(row);
+    if (!id) return null;
+    const fromNote = await loadAuthFromNotes(id);
+    if (fromNote && fromNote.email === email.toLowerCase()) return fromNote;
     return null;
   } catch (error) {
     console.error("GHL load account error", error);
