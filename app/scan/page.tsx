@@ -9,11 +9,17 @@ export default function ScanPage() {
         <p className="text-xs uppercase tracking-[0.22em] text-money">AI scanner</p>
         <h1 className="mt-2 font-serif text-4xl text-money">Identify & price</h1>
         <p className="mt-2 max-w-2xl text-cream/70">
-          Snap a coin or note. We match it to the catalog and show what it last sold for on eBay and
-          Heritage Auctions.
+          On a phone, tap Take photo — that opens the camera. Add MyVaultExchange to your home screen
+          (Safari Share → Add to Home Screen, or Chrome Install app) to use it like an app. The same
+          Scan page is the website and the phone app.
         </p>
         <div className="mt-8">
-          <Scanner />
+          <Scanner
+            photoIdReady={Boolean(process.env.GEMINI_API_KEY)}
+            ebayReady={Boolean(
+              (process.env.EBAY_CLIENT_ID || process.env.EBAY_APP_ID) && process.env.EBAY_CLIENT_SECRET,
+            )}
+          />
         </div>
       </main>
       <Footer />

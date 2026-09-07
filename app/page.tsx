@@ -20,10 +20,10 @@ export default function HomePage() {
               <p className="text-xs uppercase tracking-[0.28em] text-money">Coins · banknotes · bullion</p>
               <h1 className="mt-4 font-serif text-5xl leading-tight text-money md:text-6xl">
                 Scan it. Price it.
-                <span className="block text-gold">Collect with a crown.</span>
+                <span className="block text-gold">Keep it in the vault.</span>
               </h1>
               <p className="mt-5 max-w-xl text-lg text-cream/75">
-                CoinQueen is a collector marketplace for coins and paper money. Identify a piece, then
+                MyVaultExchange is a collector marketplace for coins and paper money. Identify a piece, then
                 price it from eBay last sold and Heritage Auctions — not trading-card feeds.
               </p>
               <form action="/catalog" className="mt-8 flex max-w-xl gap-2">
@@ -144,6 +144,10 @@ export default function HomePage() {
           <div className="mx-auto max-w-6xl px-4 py-14">
             <p className="text-xs uppercase tracking-[0.22em] text-money">Moving today</p>
             <h2 className="mb-6 font-serif text-3xl text-money">eBay last sold & Heritage</h2>
+            <p className="mb-4 max-w-2xl text-sm text-cream/50">
+              Home table is catalog samples. Open a piece for Search live links to eBay completed sales and
+              Heritage auctions.
+            </p>
             <div className="overflow-hidden rounded-2xl border border-gold/15">
               <table className="w-full text-left text-sm">
                 <thead className="bg-queen-deep text-money">

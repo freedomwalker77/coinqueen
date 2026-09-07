@@ -36,3 +36,11 @@ export type SessionUser = {
   name: string;
   shopSlug: string;
 };
+
+export type ConnectStatus = {
+  enabled: boolean;
+  accountId: string | null;
+  chargesEnabled: boolean;
+  payoutsEnabled: boolean;
+  country: string | null;
+};

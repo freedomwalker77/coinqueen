@@ -11,7 +11,7 @@ function secretKey() {
   if (process.env.NODE_ENV === "production") {
     throw new Error("SESSION_SECRET must be set in production.");
   }
-  return "coinqueen-dev-session-secret";
+  return "myvaultexchange-dev-session-secret";
 }
 
 const encodedKey = new TextEncoder().encode(secretKey());

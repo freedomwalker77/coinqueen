@@ -26,7 +26,7 @@ export type Listing = {
 
 export const MY_SHOP: Shop = {
   slug: "your-shop",
-  name: "Your CoinQueen shop",
+  name: "Your MyVaultExchange shop",
   rating: 5,
   reviews: 0,
   blurb: "Listings you publish from the scanner or sell page live here on this device.",
@@ -92,6 +92,18 @@ export const SEED_LISTINGS: Listing[] = [
     kind: "buy_now",
     bids: 0,
     createdAt: "2026-09-03T15:00:00.000Z",
+    seed: true,
+  },
+  {
+    id: "seed-v-nickel-f",
+    catalogId: "1901-liberty-head-nickel",
+    shopSlug: "binder-queen",
+    grade: "F-12",
+    price: 6,
+    kind: "buy_now",
+    bids: 0,
+    note: "Full date, even wear, typical gray nickel surfaces.",
+    createdAt: "2026-09-06T18:00:00.000Z",
     seed: true,
   },
   {
@@ -195,7 +207,7 @@ export function shopFromAccount(name: string, slug: string): Shop {
     name: `${name}'s shop`,
     rating: 5,
     reviews: 0,
-    blurb: "Collector shop on CoinQueen.",
+    blurb: "Collector shop on MyVaultExchange.",
   };
 }
 
@@ -211,7 +223,7 @@ export function getShop(slug: string) {
     name: slug === MY_SHOP.slug ? MY_SHOP.name : `${label}`,
     rating: 5,
     reviews: 0,
-    blurb: "Collector shop on CoinQueen.",
+    blurb: "Collector shop on MyVaultExchange.",
   };
 }
 

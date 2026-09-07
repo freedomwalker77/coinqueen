@@ -12,8 +12,8 @@ import {
   type Order,
 } from "./marketState";
 
-const KEY = "coinqueen-market-v1";
-const EVENT = "coinqueen-market";
+const KEY = "myvaultexchange-market-v1";
+const EVENT = "myvaultexchange-market";
 
 export type { CollectionItem, MarketState, Order };
 
@@ -155,10 +155,11 @@ export function useMarket() {
     });
   }
 
-  function checkout() {
+  function checkout(listingIds?: string[]) {
     const prev = load();
+    const wanted = new Set(listingIds ?? prev.cart);
     const lines = liveListings(prev).filter(
-      (row) => prev.cart.includes(row.id) && row.kind === "buy_now",
+      (row) => wanted.has(row.id) && row.kind === "buy_now",
     );
     if (lines.length === 0) return null;
     const total = lines.reduce((sum, row) => sum + row.price, 0);

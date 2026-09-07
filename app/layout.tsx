@@ -1,4 +1,4 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Geist, Playfair_Display } from "next/font/google";
 import "./globals.css";
 
@@ -13,9 +13,23 @@ const playfair = Playfair_Display({
 });
 
 export const metadata: Metadata = {
-  title: "CoinQueen — scan, price, collect coins & paper money",
+  metadataBase: new URL("https://myvaultexchange.com"),
+  title: "MyVaultExchange — scan, price, collect coins & paper money",
   description:
     "Identify coins and banknotes, then price them from eBay last sold and Heritage Auctions.",
+  applicationName: "MyVaultExchange",
+  appleWebApp: {
+    capable: true,
+    title: "MyVaultExchange",
+    statusBarStyle: "default",
+  },
+};
+
+export const viewport: Viewport = {
+  themeColor: "#1a7a46",
+  width: "device-width",
+  initialScale: 1,
+  viewportFit: "cover",
 };
 
 export default function RootLayout({ children }: LayoutProps<"/">) {

@@ -10,10 +10,12 @@ export function MarketGrid({
   catalogId,
   shopSlug,
   limit,
+  compact,
 }: {
   catalogId?: string;
   shopSlug?: string;
   limit?: number;
+  compact?: boolean;
 }) {
   const { ready, listings } = useMarket();
   const [publicListings, setPublicListings] = useState<Listing[]>([]);
@@ -41,7 +43,7 @@ export function MarketGrid({
   }
 
   return (
-    <div className="grid gap-5 sm:grid-cols-2 lg:grid-cols-3">
+    <div className={compact ? "grid gap-4" : "grid gap-5 sm:grid-cols-2 lg:grid-cols-3"}>
       {rows.map((listing) => (
         <ListingCard key={listing.id} listing={listing} />
       ))}

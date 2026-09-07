@@ -1,6 +1,19 @@
 import { NextResponse } from "next/server";
 import { getItem, type PieceType } from "@/lib/catalog";
-import { identifyWithGemini, matchCatalog, type IdentifyHints } from "@/lib/identify";
+import { identifyWithGemini, matchCatalog, type IdentifyHints, type IdentifyMatch } from "@/lib/identify";
+import { liveComps, marketQueryFromVision } from "@/lib/liveComps";
+
+async function withSoldRows(matches: IdentifyMatch[], query?: string) {
+  return Promise.all(
+    matches.slice(0, 3).map(async (row, index) => {
+      const feeds = await liveComps(row.item, {
+        query: index === 0 ? query : undefined,
+        webSearch: index === 0,
+      });
+      return { ...row, ebay: feeds.ebay, heritage: feeds.heritage, forSale: feeds.forSale };
+    }),
+  );
+}
 
 export async function POST(request: Request) {
   try {
@@ -11,11 +24,12 @@ export async function POST(request: Request) {
       if (!item) {
         return NextResponse.json({ error: "Unknown sample" }, { status: 404 });
       }
+      const [match] = await withSoldRows([{ item, score: 100, reasons: ["Sample scan"] }]);
       return NextResponse.json({
-        matches: [{ item, score: 100, reasons: ["Sample scan"] }],
+        matches: [match],
         vision: null,
         usedAi: false,
-        message: "Sample piece loaded from the CoinQueen catalog.",
+        message: "Sample piece loaded from the MyVaultExchange catalog.",
       });
     }
 
@@ -37,10 +51,10 @@ export async function POST(request: Request) {
       usedAi = true;
     } else if (image instanceof File && image.size > 0 && !process.env.GEMINI_API_KEY) {
       message =
-        "Photo saved for this session, but GEMINI_API_KEY is not set — matching from the fields you entered.";
+        "Photo saved, but GEMINI_API_KEY is empty in .env.local. Add a Google AI Studio key, restart npm run dev, then upload again.";
     }
 
-    const matches = matchCatalog(hints, vision ?? undefined);
+    const matches = await withSoldRows(matchCatalog(hints, vision ?? undefined), marketQueryFromVision(vision ?? undefined));
     if (matches.length === 0) {
       message =
         message ??

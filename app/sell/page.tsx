@@ -1,11 +1,19 @@
+import { getConnectStatus } from "@/app/actions/connect";
 import { Footer, Header } from "@/components/Chrome";
+import { ConnectPayouts } from "@/components/ConnectPayouts";
 import { SellForm } from "@/components/SellForm";
 import { getSessionUser } from "@/lib/session";
 import Link from "next/link";
 import { Suspense } from "react";
 
-export default async function SellPage() {
+export default async function SellPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ connect?: string }>;
+}) {
   const user = await getSessionUser();
+  const connect = (await searchParams).connect;
+  const connectStatus = user ? await getConnectStatus() : null;
 
   return (
     <div className="flex min-h-full flex-col">
@@ -18,9 +26,20 @@ export default async function SellPage() {
         </p>
         <div className="mt-8">
           {user ? (
-            <Suspense fallback={<p className="text-cream/50">Loading form…</p>}>
-              <SellForm />
-            </Suspense>
+            <>
+              {connectStatus ? (
+                <ConnectPayouts initial={connectStatus} returned={connect === "return"} />
+              ) : null}
+              {connect === "error" ? (
+                <p className="mb-6 text-sm text-red-700">
+                  Stripe Connect did not finish. Turn on Connect in the Stripe Dashboard (test mode), then try
+                  again.
+                </p>
+              ) : null}
+              <Suspense fallback={<p className="text-cream/50">Loading form…</p>}>
+                <SellForm />
+              </Suspense>
+            </>
           ) : (
             <p className="rounded-2xl border border-money/25 bg-queen-deep p-6 text-cream/80">
               Create an account to list. Collection and listings then persist with you.{" "}

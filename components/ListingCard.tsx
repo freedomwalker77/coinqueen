@@ -34,7 +34,13 @@ export function ListingCard({ listing }: { listing: Listing }) {
             {shop.name}
           </Link>
         ) : null}
-        {listing.note ? <p className="text-sm text-cream/60">{listing.note}</p> : null}
+        <p className="line-clamp-3 text-sm text-cream/60">{listing.note || packed.item.description}</p>
+        <p className="text-xs text-cream/45">
+          {listing.kind === "auction" ? "Auction" : "Buy now"} · {listing.grade}
+          {listing.createdAt
+            ? ` · listed ${new Date(listing.createdAt).toLocaleDateString("en-US", { month: "short", day: "numeric" })}`
+            : ""}
+        </p>
         <p className="font-serif text-2xl text-gold">{formatMoney(listing.price)}</p>
         {listing.kind === "auction" ? (
           <div className="space-y-2">

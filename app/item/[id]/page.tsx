@@ -3,8 +3,10 @@ import { ItemCard } from "@/components/ItemCard";
 import { MarketGrid } from "@/components/MarketGrid";
 import { PieceActions } from "@/components/PieceActions";
 import { PieceArt } from "@/components/PieceArt";
+import { SoldColumn } from "@/components/SoldColumn";
 import { formatMoney, getItem, relatedItems } from "@/lib/catalog";
-import { EBAY_SOLD, HERITAGE, isEbaySold, soldVenue } from "@/lib/comps";
+import { EBAY_SOLD, HERITAGE } from "@/lib/comps";
+import { liveComps } from "@/lib/liveComps";
 import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
@@ -16,9 +18,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const item = getItem(id);
-  if (!item) return { title: "Piece not found — CoinQueen" };
+  if (!item) return { title: "Piece not found — MyVaultExchange" };
   return {
-    title: `${item.name} — CoinQueen`,
+    title: `${item.name} — MyVaultExchange`,
     description: `${item.shortName} mid market ${formatMoney(item.marketMid)}. ${item.description}`,
   };
 }
@@ -33,8 +35,7 @@ export default async function ItemPage({
   if (!item) notFound();
   const related = relatedItems(item);
   const popTotal = item.population.reduce((sum, row) => sum + row.count, 0);
-  const ebaySold = item.comps.filter((comp) => isEbaySold(comp.venue));
-  const heritageSold = item.comps.filter((comp) => !isEbaySold(comp.venue));
+  const feeds = await liveComps(item, { webSearch: true });
 
   return (
     <div className="flex min-h-full flex-col">
@@ -94,56 +95,25 @@ export default async function ItemPage({
               </tbody>
             </table>
           </section>
-          <section>
-            <h2 className="font-serif text-2xl text-money">{EBAY_SOLD}</h2>
-            <ul className="mt-4 space-y-3">
-              {ebaySold.length === 0 ? (
-                <li className="text-sm text-cream/55">No eBay last-sold row in this sample yet.</li>
-              ) : (
-                ebaySold.map((comp) => (
-                  <li
-                    key={`${comp.date}-${comp.price}`}
-                    className="flex items-center justify-between rounded-xl border border-money/15 bg-queen-deep px-4 py-3 text-sm"
-                  >
-                    <div>
-                      <p className="text-cream">
-                        {comp.grade} · {soldVenue(comp.venue)}
-                      </p>
-                      <p className="text-cream/50">{comp.date} · sold</p>
-                    </div>
-                    <p className="text-gold">{formatMoney(comp.price)}</p>
-                  </li>
-                ))
-              )}
-            </ul>
-          </section>
-          <section>
-            <h2 className="font-serif text-2xl text-money">{HERITAGE}</h2>
-            <ul className="mt-4 space-y-3">
-              {heritageSold.length === 0 ? (
-                <li className="text-sm text-cream/55">No Heritage realized price in this sample yet.</li>
-              ) : (
-                heritageSold.map((comp) => (
-                  <li
-                    key={`${comp.date}-${comp.price}`}
-                    className="flex items-center justify-between rounded-xl border border-gold/25 bg-queen-deep px-4 py-3 text-sm"
-                  >
-                    <div>
-                      <p className="text-cream">
-                        {comp.grade} · {soldVenue(comp.venue)}
-                      </p>
-                      <p className="text-cream/50">{comp.date} · sold</p>
-                    </div>
-                    <p className="text-gold">{formatMoney(comp.price)}</p>
-                  </li>
-                ))
-              )}
-            </ul>
-          </section>
+          <SoldColumn
+            title="For sale on eBay"
+            feed={feeds.forSale}
+            sampleEmpty="No live eBay ad with a photo yet. Use Search live for current listings."
+          />
+          <SoldColumn
+            title={EBAY_SOLD}
+            feed={feeds.ebay}
+            sampleEmpty="No eBay row yet. Search live for completed sales."
+          />
+          <SoldColumn
+            title={HERITAGE}
+            feed={feeds.heritage}
+            sampleEmpty="No Heritage row yet. Search live for realized auction prices."
+          />
         </div>
 
         <section className="mt-12 rounded-3xl border border-gold/15 bg-queen-deep p-6">
-          <h2 className="font-serif text-2xl text-money">Population on CoinQueen</h2>
+          <h2 className="font-serif text-2xl text-money">Population on MyVaultExchange</h2>
           <p className="mt-1 text-sm text-cream/50">
             {popTotal} tracked copies in this starter catalog (stand-in for live marketplace supply).
           </p>
@@ -158,7 +128,7 @@ export default async function ItemPage({
         </section>
 
         <section className="mt-12">
-          <h2 className="mb-4 font-serif text-2xl text-money">Live on CoinQueen</h2>
+          <h2 className="mb-4 font-serif text-2xl text-money">For sale on MyVaultExchange</h2>
           <MarketGrid catalogId={item.id} />
         </section>
 

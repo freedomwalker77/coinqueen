@@ -12,6 +12,12 @@ export type Comp = {
   grade: string;
   price: number;
   kind: "sold" | "listed";
+  url?: string;
+  title?: string;
+  imageUrl?: string;
+  seller?: string;
+  details?: string;
+  catalogId?: string;
 };
 
 export type GradePrice = {
@@ -275,6 +281,52 @@ export const catalog: CatalogItem[] = [
       { grade: "AU+", count: 1 },
     ],
     accent: "#7a6a4f",
+  },
+  {
+    id: "1901-liberty-head-nickel",
+    type: "coin",
+    category: "us-coins",
+    name: "1901 Liberty Head Nickel (V Nickel)",
+    shortName: "Liberty Head V Nickel",
+    year: 1901,
+    country: "United States",
+    denomination: "5 cents",
+    metal: "Copper-nickel",
+    series: "Liberty Head Nickel",
+    rarity: "common",
+    keywords: [
+      "liberty",
+      "liberty head",
+      "v nickel",
+      "nickel",
+      "five cent",
+      "5c",
+      "coronet",
+      "1901",
+      "barber nickel",
+    ],
+    description:
+      "Liberty facing left, 13 stars, date below; large V on the reverse. Common date in the 1883–1912 Liberty Head (V) nickel series. Circulated pieces are inexpensive; look for a full LIBERTY on the coronet.",
+    marketLow: 2,
+    marketMid: 8,
+    marketHigh: 175,
+    grades: [
+      { grade: "G-4", price: 2 },
+      { grade: "VF-20", price: 6 },
+      { grade: "EF-40", price: 12 },
+      { grade: "AU-50", price: 28 },
+      { grade: "MS-63", price: 85 },
+      { grade: "MS-65", price: 175 },
+    ],
+    comps: [
+      { date: "2026-08-12", venue: "eBay", grade: "F-12", price: 4.5, kind: "sold" },
+      { date: "2026-06-03", venue: "Heritage", grade: "MS-64", price: 120, kind: "sold" },
+    ],
+    population: [
+      { grade: "Circulated", count: 18 },
+      { grade: "Mint state", count: 3 },
+    ],
+    accent: "#8a8f96",
   },
   {
     id: "1943-lincoln-steel-cent",

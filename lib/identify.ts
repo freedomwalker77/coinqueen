@@ -1,4 +1,5 @@
 import { catalog, type CatalogItem, type PieceType } from "./catalog";
+import { geminiGenerate, parseJsonObject } from "./gemini";
 
 export type IdentifyHints = {
   year?: string;
@@ -112,43 +113,23 @@ export function matchCatalog(hints: IdentifyHints, vision?: VisionGuess, limit =
 }
 
 export async function identifyWithGemini(imageBase64: string, mimeType: string): Promise<VisionGuess | null> {
-  const key = process.env.GEMINI_API_KEY;
-  if (!key) return null;
+  if (!process.env.GEMINI_API_KEY) return null;
 
   const prompt = `You identify collectible coins and paper money from a photo.
 Return ONLY compact JSON with keys:
 type ("coin" or "note"), name, year (string or empty), country, denomination, mint, metal, series, notes.
 If unsure, still guess the most likely circulating or collector type. No markdown.`;
 
-  const response = await fetch(
-    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`,
-    {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        contents: [
-          {
-            parts: [
-              { text: prompt },
-              { inline_data: { mime_type: mimeType, data: imageBase64 } },
-            ],
-          },
+  const text = await geminiGenerate({
+    contents: [
+      {
+        parts: [
+          { text: prompt },
+          { inline_data: { mime_type: mimeType || "image/jpeg", data: imageBase64 } },
         ],
-        generationConfig: { temperature: 0.2 },
-      }),
-    },
-  );
-
-  if (!response.ok) {
-    throw new Error(`Gemini error ${response.status}`);
-  }
-
-  const json = (await response.json()) as {
-    candidates?: { content?: { parts?: { text?: string }[] } }[];
-  };
-  const text = json.candidates?.[0]?.content?.parts?.map((part) => part.text ?? "").join("") ?? "";
-  const start = text.indexOf("{");
-  const end = text.lastIndexOf("}");
-  if (start < 0 || end < 0) return { notes: text.slice(0, 240) };
-  return JSON.parse(text.slice(start, end + 1)) as VisionGuess;
+      },
+    ],
+    generationConfig: { temperature: 0.2 },
+  });
+  return parseJsonObject<VisionGuess>(text) ?? { notes: text.slice(0, 240) };
 }

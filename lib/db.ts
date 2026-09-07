@@ -12,6 +12,10 @@ export type UserRecord = {
   passwordHash: string;
   shopSlug: string;
   createdAt: string;
+  stripeAccountId?: string;
+  stripeChargesEnabled?: boolean;
+  stripePayoutsEnabled?: boolean;
+  country?: string;
 };
 
 type UsersFile = { users: UserRecord[] };
@@ -65,6 +69,20 @@ export function findUserById(id: string) {
 
 export function findUserByShopSlug(slug: string) {
   return readUsers().users.find((user) => user.shopSlug === slug);
+}
+
+export function updateUser(
+  id: string,
+  patch: Partial<
+    Pick<UserRecord, "stripeAccountId" | "stripeChargesEnabled" | "stripePayoutsEnabled" | "country">
+  >,
+) {
+  const file = readUsers();
+  const user = file.users.find((row) => row.id === id);
+  if (!user) return null;
+  Object.assign(user, patch);
+  writeUsers(file);
+  return user;
 }
 
 function marketPath(userId: string) {

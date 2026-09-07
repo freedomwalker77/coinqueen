@@ -11,8 +11,8 @@ export default function MarketPage() {
         <p className="text-xs uppercase tracking-[0.22em] text-money">Marketplace</p>
         <h1 className="mt-2 font-serif text-4xl text-money">Buy & bid</h1>
         <p className="mt-2 max-w-2xl text-cream/60">
-          Verified-shop flavor with buy-now and timed auctions. Checkout is a local demo — nothing is
-          charged.
+          Buy-now and timed auctions. Buyers pay in USD from most countries. Connected sellers get paid
+          minus MyVaultExchange’s 10% fee.
         </p>
         <div className="mt-6 flex flex-wrap gap-2">
           {SHOPS.filter((shop) => shop.slug !== "your-shop").map((shop) => (
