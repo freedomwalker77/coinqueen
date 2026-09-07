@@ -24,4 +24,4 @@ npm run dev
 
 Open [http://localhost:3000](http://localhost:3000) locally. Production: [https://myvaultexchange.com](https://myvaultexchange.com).
 
-Copy `.env.example` to `.env.local` to set `SESSION_SECRET` (required in production), optional `GEMINI_API_KEY` for photo identification, `STRIPE_SECRET_KEY` for Checkout (use Stripe test keys first), and optional eBay keys for live listing/sold rows.
+Copy `.env.example` to `.env.local` to set `SESSION_SECRET` (required in production), optional `GEMINI_API_KEY` for photo identification, `STRIPE_SECRET_KEY` for Checkout (use Stripe test keys first), optional eBay keys for live listing/sold rows, and optional `GHL_API_KEY` + `GHL_LOCATION_ID` so each signup creates a Go High Level Contact.

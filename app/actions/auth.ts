@@ -8,6 +8,7 @@ import {
   type AuthFormState,
 } from "@/lib/definitions";
 import { createUser, findUserByEmail } from "@/lib/db";
+import { upsertGhlContact } from "@/lib/ghl";
 import { createSession, deleteSession } from "@/lib/session";
 
 export async function signup(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -31,6 +32,7 @@ export async function signup(_state: AuthFormState, formData: FormData): Promise
     return { message: created.error };
   }
 
+  await upsertGhlContact({ name, email });
   await createSession(created.user.id);
   redirect("/collection");
 }
@@ -53,6 +55,7 @@ export async function login(_state: AuthFormState, formData: FormData): Promise<
     return { message: "Email or password is incorrect." };
   }
 
+  await upsertGhlContact({ name: user.name, email: user.email });
   await createSession(user.id);
   redirect("/collection");
 }
