@@ -1,6 +1,6 @@
 import "server-only";
 
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { Listing } from "./market";
 import { emptyMarket, type MarketState } from "./marketState";
@@ -20,25 +20,31 @@ export type UserRecord = {
 
 type UsersFile = { users: UserRecord[] };
 
-const dataDir = path.join(process.cwd(), "data");
-const usersPath = path.join(dataDir, "users.json");
-const marketsDir = path.join(dataDir, "markets");
+const bundledDir = path.join(process.cwd(), "data");
+const writableDir = process.env.VERCEL ? "/tmp/myvaultexchange-data" : bundledDir;
+const usersPath = path.join(writableDir, "users.json");
+const bundledUsersPath = path.join(bundledDir, "users.json");
+const marketsDir = path.join(writableDir, "markets");
+const bundledMarketsDir = path.join(bundledDir, "markets");
 
-function ensureDirs() {
+function ensureWritable() {
   mkdirSync(marketsDir, { recursive: true });
 }
 
 function readUsers(): UsersFile {
-  ensureDirs();
-  try {
-    return JSON.parse(readFileSync(usersPath, "utf8")) as UsersFile;
-  } catch {
-    return { users: [] };
+  for (const file of [usersPath, bundledUsersPath]) {
+    try {
+      if (!existsSync(file)) continue;
+      return JSON.parse(readFileSync(file, "utf8")) as UsersFile;
+    } catch {
+      /* try the next path */
+    }
   }
+  return { users: [] };
 }
 
 function writeUsers(file: UsersFile) {
-  ensureDirs();
+  ensureWritable();
   writeFileSync(usersPath, JSON.stringify(file, null, 2));
 }
 
@@ -90,29 +96,40 @@ function marketPath(userId: string) {
 }
 
 export function loadUserMarket(userId: string): MarketState {
-  ensureDirs();
-  try {
-    return { ...emptyMarket, ...JSON.parse(readFileSync(marketPath(userId), "utf8")) };
-  } catch {
-    return emptyMarket;
+  for (const dir of [marketsDir, bundledMarketsDir]) {
+    try {
+      const file = path.join(dir, `${userId}.json`);
+      if (!existsSync(file)) continue;
+      return { ...emptyMarket, ...JSON.parse(readFileSync(file, "utf8")) };
+    } catch {
+      /* try the next path */
+    }
   }
+  return emptyMarket;
 }
 
 export function saveUserMarket(userId: string, state: MarketState) {
-  ensureDirs();
+  ensureWritable();
   writeFileSync(marketPath(userId), JSON.stringify(state));
 }
 
 export function loadAllUserListings() {
-  ensureDirs();
   const listings: Listing[] = [];
-  for (const file of readdirSync(marketsDir)) {
-    if (!file.endsWith(".json")) continue;
-    try {
-      const state = JSON.parse(readFileSync(path.join(marketsDir, file), "utf8")) as MarketState;
-      listings.push(...(state.listings ?? []));
-    } catch {
-      /* skip a bad file */
+  const seen = new Set<string>();
+  for (const dir of [marketsDir, bundledMarketsDir]) {
+    if (!existsSync(dir)) continue;
+    for (const file of readdirSync(dir)) {
+      if (!file.endsWith(".json")) continue;
+      try {
+        const state = JSON.parse(readFileSync(path.join(dir, file), "utf8")) as MarketState;
+        for (const listing of state.listings ?? []) {
+          if (seen.has(listing.id)) continue;
+          seen.add(listing.id);
+          listings.push(listing);
+        }
+      } catch {
+        /* skip a bad file */
+      }
     }
   }
   return listings;
