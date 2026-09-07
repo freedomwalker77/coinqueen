@@ -65,6 +65,15 @@ export function createUser(input: { name: string; email: string; passwordHash: s
   return { user };
 }
 
+export function upsertUser(user: UserRecord) {
+  const file = readUsers();
+  const index = file.users.findIndex((row) => row.id === user.id || row.email === user.email);
+  if (index >= 0) file.users[index] = { ...file.users[index], ...user };
+  else file.users.push(user);
+  writeUsers(file);
+  return user;
+}
+
 export function findUserByEmail(email: string) {
   return readUsers().users.find((user) => user.email === email.toLowerCase());
 }

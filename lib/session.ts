@@ -35,9 +35,26 @@ export async function decrypt(session: string | undefined = "") {
   }
 }
 
-export async function createSession(userId: string) {
+function sessionCookieDomain() {
+  try {
+    const host = new URL(process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000").hostname;
+    if (host === "myvaultexchange.com" || host.endsWith(".myvaultexchange.com")) {
+      return ".myvaultexchange.com";
+    }
+  } catch {
+    /* local */
+  }
+  return undefined;
+}
+
+export async function createSession(user: { id: string; name: string; shopSlug: string }) {
   const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
-  const session = await encrypt({ userId, expiresAt });
+  const session = await encrypt({
+    userId: user.id,
+    name: user.name,
+    shopSlug: user.shopSlug,
+    expiresAt,
+  });
   const cookieStore = await cookies();
   cookieStore.set("session", session, {
     httpOnly: true,
@@ -45,12 +62,18 @@ export async function createSession(userId: string) {
     expires: new Date(expiresAt),
     sameSite: "lax",
     path: "/",
+    domain: sessionCookieDomain(),
   });
 }
 
 export async function deleteSession() {
   const cookieStore = await cookies();
-  cookieStore.delete("session");
+  const domain = sessionCookieDomain();
+  if (domain) {
+    cookieStore.delete({ name: "session", path: "/", domain });
+  } else {
+    cookieStore.delete("session");
+  }
 }
 
 export async function getSessionUser(): Promise<SessionUser | null> {
@@ -59,6 +82,9 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const payload = await decrypt(token);
   if (!payload?.userId) return null;
   const user = findUserById(payload.userId);
-  if (!user) return null;
-  return { id: user.id, name: user.name, shopSlug: user.shopSlug };
+  if (user) return { id: user.id, name: user.name, shopSlug: user.shopSlug };
+  if (payload.name && payload.shopSlug) {
+    return { id: payload.userId, name: payload.name, shopSlug: payload.shopSlug };
+  }
+  return null;
 }

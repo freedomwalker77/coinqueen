@@ -7,8 +7,8 @@ import {
   SignupFormSchema,
   type AuthFormState,
 } from "@/lib/definitions";
-import { createUser, findUserByEmail } from "@/lib/db";
-import { upsertGhlContact } from "@/lib/ghl";
+import { createUser, findUserByEmail, upsertUser } from "@/lib/db";
+import { loadGhlAccount, persistGhlAccount } from "@/lib/ghl";
 import { createSession, deleteSession } from "@/lib/session";
 
 export async function signup(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {
@@ -23,17 +23,22 @@ export async function signup(_state: AuthFormState, formData: FormData): Promise
 
   const { name, email, password } = validated.data;
   const passwordHash = await bcrypt.hash(password, 10);
-  const created = createUser({
-    name,
-    email,
-    passwordHash,
-  });
+  const created = createUser({ name, email, passwordHash });
+  let user = "error" in created ? null : created.user;
+
   if ("error" in created) {
-    return { message: created.error };
+    const existing = findUserByEmail(email) ?? (await loadGhlAccount(email));
+    if (!existing) return { message: created.error };
+    const matches = await bcrypt.compare(password, existing.passwordHash);
+    if (!matches) {
+      return { message: "An account with that email already exists. Log in instead." };
+    }
+    user = upsertUser({ ...existing, name, passwordHash });
   }
 
-  await upsertGhlContact({ name, email });
-  await createSession(created.user.id);
+  if (!user) return { message: created.error };
+  await persistGhlAccount(user);
+  await createSession(user);
   redirect("/collection");
 }
 
@@ -46,7 +51,11 @@ export async function login(_state: AuthFormState, formData: FormData): Promise<
     return { errors: validated.error.flatten().fieldErrors };
   }
 
-  const user = findUserByEmail(validated.data.email);
+  let user = findUserByEmail(validated.data.email);
+  if (!user) {
+    const remote = await loadGhlAccount(validated.data.email);
+    if (remote) user = upsertUser(remote);
+  }
   if (!user) {
     return { message: "Email or password is incorrect." };
   }
@@ -55,8 +64,8 @@ export async function login(_state: AuthFormState, formData: FormData): Promise<
     return { message: "Email or password is incorrect." };
   }
 
-  await upsertGhlContact({ name: user.name, email: user.email });
-  await createSession(user.id);
+  await persistGhlAccount(user);
+  await createSession(user);
   redirect("/collection");
 }
 

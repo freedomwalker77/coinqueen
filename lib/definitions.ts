@@ -28,6 +28,8 @@ export type AuthFormState =
 
 export type SessionPayload = {
   userId: string;
+  name?: string;
+  shopSlug?: string;
   expiresAt: number;
 };
 
