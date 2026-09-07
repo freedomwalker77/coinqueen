@@ -99,7 +99,7 @@ export const SEED_LISTINGS: Listing[] = [
     catalogId: "1901-liberty-head-nickel",
     shopSlug: "binder-queen",
     grade: "F-12",
-    price: 6,
+    price: 0.5,
     kind: "buy_now",
     bids: 0,
     note: "Full date, even wear, typical gray nickel surfaces.",
