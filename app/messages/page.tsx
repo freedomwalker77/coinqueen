@@ -1,13 +1,10 @@
-import { AccountScreen } from "@/components/AccountScreen";
+import { MessagesInbox } from "@/components/MessagesInbox";
+import { Suspense } from "react";
 
 export default function MessagesPage() {
   return (
-    <AccountScreen
-      eyebrow="Account"
-      title="Messages"
-      blurb="Buyer and seller notes will land here. For now, use the email on your account."
-    >
-      <p className="text-cream/55">No messages yet.</p>
-    </AccountScreen>
+    <Suspense fallback={<p className="p-10 text-cream/50">Loading messages…</p>}>
+      <MessagesInbox />
+    </Suspense>
   );
 }

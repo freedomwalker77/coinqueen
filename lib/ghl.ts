@@ -6,6 +6,8 @@ const GHL_API = "https://services.leadconnectorhq.com";
 const GHL_VERSION = "2021-07-28";
 const AUTH_PREFIX = "mve1.";
 const NOTE_PREFIX = "MVE_AUTH:";
+const THREAD_PREFIX = "MVE_THREADS:";
+const THREAD_EMAIL = "mve-threads@myvaultexchange.com";
 
 type GhlContact = {
   id?: string;
@@ -203,6 +205,76 @@ export async function loadGhlAccount(email: string): Promise<UserRecord | null> 
     console.error("GHL load account error", error);
     return null;
   }
+}
+
+export async function persistGhlThreads(store: { conversations: unknown[] }) {
+  if (!ghlAuth()) return false;
+  try {
+    const row = await upsertContactRecord({ name: "MyVaultExchange Messages", email: THREAD_EMAIL });
+    const id = contactId(row) || contactId(await findContactByEmail(THREAD_EMAIL));
+    if (!id) return false;
+    const auth = ghlAuth();
+    if (!auth) return false;
+    const body = THREAD_PREFIX + JSON.stringify(store);
+    const create = await ghlFetch(`${GHL_API}/contacts/${id}/notes`, auth.key, {
+      method: "POST",
+      body: JSON.stringify({ body, title: "MyVaultExchange messages" }),
+    });
+    return create.ok;
+  } catch (error) {
+    console.error("GHL persist threads error", error);
+    return false;
+  }
+}
+
+export async function loadGhlThreads(): Promise<{ conversations: Array<Record<string, unknown>> } | null> {
+  if (!ghlAuth()) return null;
+  try {
+    const row = await findContactByEmail(THREAD_EMAIL);
+    const id = contactId(row);
+    if (!id) return null;
+    const auth = ghlAuth();
+    if (!auth) return null;
+    const response = await ghlFetch(`${GHL_API}/contacts/${id}/notes`, auth.key);
+    if (!response.ok) return null;
+    const json = (await response.json()) as { notes?: Array<{ body?: string }> };
+    const notes = (json.notes ?? [])
+      .map((note) => note.body)
+      .filter((body): body is string => Boolean(body?.startsWith(THREAD_PREFIX)));
+    const raw = notes.at(-1);
+    if (!raw) return null;
+    const parsed = JSON.parse(raw.slice(THREAD_PREFIX.length)) as { conversations?: Array<Record<string, unknown>> };
+    return { conversations: parsed.conversations ?? [] };
+  } catch (error) {
+    console.error("GHL load threads error", error);
+    return null;
+  }
+}
+
+export async function searchGhlUserByShop(slug: string) {
+  if (!ghlAuth()) return null;
+  const auth = ghlAuth();
+  if (!auth) return null;
+  try {
+    const search = new URL(`${GHL_API}/contacts/`);
+    search.searchParams.set("locationId", auth.locationId);
+    search.searchParams.set("query", slug);
+    search.searchParams.set("limit", "10");
+    const response = await ghlFetch(search.toString(), auth.key);
+    if (!response.ok) return null;
+    const json = (await response.json()) as { contacts?: GhlContact[] };
+    for (const row of json.contacts ?? []) {
+      const id = contactId(row);
+      if (!id) continue;
+      const user = await loadAuthFromNotes(id);
+      if (user?.shopSlug === slug) {
+        return { id: user.id, name: user.name, shopSlug: user.shopSlug };
+      }
+    }
+  } catch (error) {
+    console.error("GHL shop lookup error", error);
+  }
+  return null;
 }
 
 export async function pingGhl() {

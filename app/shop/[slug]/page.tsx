@@ -1,8 +1,9 @@
 import { Footer, Header } from "@/components/Chrome";
 import { MarketGrid } from "@/components/MarketGrid";
 import { findUserByShopSlug } from "@/lib/db";
-import { getShop, shopFromAccount } from "@/lib/market";
+import { getShop, isDemoShop, shopFromAccount } from "@/lib/market";
 import { getSessionUser } from "@/lib/session";
+import Link from "next/link";
 import { notFound } from "next/navigation";
 
 function safeEbayListingUrl(raw?: string) {
@@ -46,6 +47,14 @@ export default async function ShopPage({
         <p className="mt-3 text-sm text-gold">
           {shop.rating.toFixed(1)} · {shop.reviews} reviews
         </p>
+        {session && session.shopSlug !== slug && !isDemoShop(slug) ? (
+          <Link
+            href={`/messages?to=${encodeURIComponent(slug)}`}
+            className="mt-4 inline-flex rounded-full bg-gold px-4 py-2 text-sm font-medium text-queen-ink hover:bg-gold-bright"
+          >
+            Message seller
+          </Link>
+        ) : null}
         {listed ? (
           <p className="mt-6 rounded-2xl border border-gold/30 bg-queen-deep px-4 py-3 text-sm text-cream">
             Listing published to your account shop.

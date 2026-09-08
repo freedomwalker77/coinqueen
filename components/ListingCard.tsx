@@ -3,14 +3,14 @@
 import Link from "next/link";
 import { useState } from "react";
 import { formatMoney } from "@/lib/catalog";
-import { getShop, isSampleListing, listingWithItem, type Listing } from "@/lib/market";
+import { getShop, isDemoShop, isSampleListing, listingWithItem, type Listing } from "@/lib/market";
 import { useMarket } from "@/lib/localMarket";
 import { PieceArt } from "./PieceArt";
 
 export function ListingCard({ listing }: { listing: Listing }) {
   const packed = listingWithItem(listing);
   const shop = getShop(listing.shopSlug);
-  const { addToCart, placeBid, state, deleteListing, mine } = useMarket();
+  const { addToCart, placeBid, state, deleteListing, mine, account } = useMarket();
   const [bid, setBid] = useState("");
   const [message, setMessage] = useState("");
   if (!packed) return null;
@@ -34,6 +34,14 @@ export function ListingCard({ listing }: { listing: Listing }) {
         {shop ? (
           <Link href={`/shop/${shop.slug}`} className="block text-sm text-cream/55 hover:text-gold">
             {shop.name}
+          </Link>
+        ) : null}
+        {account && shop && !mine(listing) && !isSampleListing(listing) && !isDemoShop(listing.shopSlug) ? (
+          <Link
+            href={`/messages?to=${encodeURIComponent(listing.shopSlug)}&item=${encodeURIComponent(packed.item.shortName)}`}
+            className="text-sm text-money hover:underline"
+          >
+            Message seller
           </Link>
         ) : null}
         <p className="line-clamp-3 text-sm text-cream/60">{listing.note || packed.item.description}</p>

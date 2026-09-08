@@ -160,6 +160,14 @@ export function loadAllUserListings() {
   return listings;
 }
 
+export function listPublicUsers() {
+  return readUsers().users.map((user) => ({
+    id: user.id,
+    name: user.name,
+    shopSlug: user.shopSlug,
+  }));
+}
+
 export function slugifyShop(name: string, userId: string) {
   const base = name
     .toLowerCase()

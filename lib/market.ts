@@ -29,6 +29,10 @@ export function isSampleListing(listing: { seed?: boolean; id: string }) {
   return listing.seed === true || listing.id.startsWith("seed-");
 }
 
+export function isDemoShop(slug: string) {
+  return SHOPS.some((shop) => shop.slug === slug && shop.slug !== MY_SHOP.slug);
+}
+
 export const MY_SHOP: Shop = {
   slug: "your-shop",
   name: "Your MyVaultExchange shop",
