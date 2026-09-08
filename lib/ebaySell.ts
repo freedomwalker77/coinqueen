@@ -113,10 +113,14 @@ async function userAccessToken(user: UserRecord) {
   return token.accessToken;
 }
 
-async function ebayFetch(token: string, path: string, init?: RequestInit & { marketplace?: string }) {
-  const { marketplace: marketplaceOverride, ...rest } = init ?? {};
+async function ebayFetch(
+  token: string,
+  path: string,
+  init?: RequestInit & { marketplace?: string; locale?: string },
+) {
+  const { marketplace: marketplaceOverride, locale: localeOverride, ...rest } = init ?? {};
   const marketplace = marketplaceOverride ?? ebayMarketplace();
-  const locale = marketplace === "EBAY_CA" ? "en-CA" : "en-US";
+  const locale = localeOverride ?? (marketplace === "EBAY_CA" ? "en-CA" : "en-US");
   const headers = new Headers();
   headers.set("Authorization", `Bearer ${token}`);
   headers.set("Accept", "application/json");
@@ -157,6 +161,7 @@ async function firstPolicyId(
 ) {
   const response = await ebayFetch(token, `/sell/account/v1/${kind}?marketplace_id=${marketplace}`, {
     marketplace,
+    locale: "en-US",
   });
   const json = (await response.json()) as Record<
     string,
@@ -179,7 +184,10 @@ async function policiesFor(token: string, marketplace: string) {
 }
 
 async function firstLocationKey(token: string, marketplace: string) {
-  const response = await ebayFetch(token, "/sell/inventory/v1/location?limit=20", { marketplace });
+  const response = await ebayFetch(token, "/sell/inventory/v1/location?limit=20", {
+    marketplace,
+    locale: "en-US",
+  });
   const json = (await response.json()) as {
     locations?: Array<{ merchantLocationKey?: string; merchantLocationStatus?: string }>;
   };
@@ -229,7 +237,7 @@ async function publishToEbayInner(input: {
   const marketplaces = preferred === "EBAY_CA" ? ["EBAY_CA", "EBAY_US"] : [preferred, "EBAY_CA", "EBAY_US"];
   const uniqueMarketplaces = [...new Set(marketplaces)];
 
-  let lastError = "eBay could not create an offer on eBay.ca or eBay.com.";
+  const errors: string[] = [];
   const sku = `mve${Date.now()}`.slice(0, 50);
   const title = `${input.item.shortName} ${input.grade}`.slice(0, 80);
   const description = [input.item.description, input.note, `Grade: ${input.grade}`, "Listed from MyVaultExchange."]
@@ -240,12 +248,12 @@ async function publishToEbayInner(input: {
   for (const marketplace of uniqueMarketplaces) {
     const policies = await policiesFor(token, marketplace);
     if (!policies) {
-      lastError = `eBay is missing Payment, Return, or Shipping policies for ${marketplace}.`;
+      errors.push(`${marketplace}: missing Payment, Return, or Shipping policies in Seller Hub`);
       continue;
     }
     const locationKey = await firstLocationKey(token, marketplace);
     if (!locationKey) {
-      lastError = `No eBay inventory location for ${marketplace}. Add a business location in Seller Hub.`;
+      errors.push(`${marketplace}: no inventory location. Add a business location in Seller Hub`);
       continue;
     }
 
@@ -264,7 +272,7 @@ async function publishToEbayInner(input: {
     });
     if (!itemRes.ok) {
       const text = await itemRes.text();
-      lastError = `eBay could not save the item on ${marketplace} (${itemRes.status}): ${text.slice(0, 200)}`;
+      errors.push(`${marketplace}: could not save item (${itemRes.status}): ${text.slice(0, 160)}`);
       continue;
     }
 
@@ -288,9 +296,10 @@ async function publishToEbayInner(input: {
     });
     const offerJson = (await offerRes.json()) as { offerId?: string; errors?: Array<{ message?: string }> };
     if (!offerRes.ok || !offerJson.offerId) {
-      lastError =
+      errors.push(
         offerJson.errors?.map((row) => row.message).filter(Boolean).join("; ") ||
-        `eBay offer failed on ${marketplace} (${offerRes.status})`;
+          `eBay offer failed on ${marketplace} (${offerRes.status})`,
+      );
       continue;
     }
 
@@ -301,9 +310,10 @@ async function publishToEbayInner(input: {
     });
     const pubJson = (await pubRes.json()) as { listingId?: string; errors?: Array<{ message?: string }> };
     if (!pubRes.ok || !pubJson.listingId) {
-      lastError =
+      errors.push(
         pubJson.errors?.map((row) => row.message).filter(Boolean).join("; ") ||
-        `eBay publish failed on ${marketplace} (${pubRes.status})`;
+          `eBay publish failed on ${marketplace} (${pubRes.status})`,
+      );
       continue;
     }
 
@@ -311,5 +321,5 @@ async function publishToEbayInner(input: {
     return { url: `${host}/itm/${pubJson.listingId}` };
   }
 
-  return { error: lastError };
+  return { error: errors.join(" | ") || "eBay could not create an offer on eBay.ca or eBay.com." };
 }
