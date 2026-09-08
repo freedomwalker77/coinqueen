@@ -17,7 +17,7 @@ const buyer = [
   { href: "/account", label: "Dashboard", d: "M4 13h4v7H4zM10 4h4v16h-4zM16 9h4v11h-4z" },
   { href: "/orders", label: "My orders", d: "M4 7h16v12H4zM8 7V5h8v2" },
   { href: "/messages", label: "Messages", d: "M4 6h16v10H8l-4 4z" },
-  { href: "/shop", label: "Profile", d: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5 20a7 7 0 0 1 14 0" },
+  { href: "/profile", label: "Profile", d: "M12 12a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM5 20a7 7 0 0 1 14 0" },
   { href: "/training", label: "My training", d: "M4 10l8-4 8 4-8 4zM7 12v5c3 2 7 2 10 0v-5" },
   { href: "/essentials", label: "Collector essentials", d: "M7 4h10v16H7zM9 8h6M9 12h6M9 16h4" },
   { href: "/help", label: "Help center", d: "M12 18h.01M9.5 9a2.5 2.5 0 1 1 3.5 2.3c-.8.5-1.5 1.2-1.5 2.2V14" },
@@ -90,7 +90,7 @@ export function AccountMenu({ user }: { user: SessionUser }) {
               <p className="truncate font-medium text-queen-ink">{user.name}</p>
               <p className="truncate text-xs text-cream/50">@{handle}</p>
             </div>
-            <Link href={shopHref} onClick={() => setOpen(false)} className="text-sm text-money hover:underline">
+            <Link href="/profile" onClick={() => setOpen(false)} className="text-sm text-money hover:underline">
               Profile
             </Link>
           </div>

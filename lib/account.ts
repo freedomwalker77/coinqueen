@@ -25,5 +25,14 @@ export async function resolvePersistedUser(
     ebayAccessToken: local?.ebayAccessToken || remote?.ebayAccessToken,
     ebayTokenExpires: local?.ebayTokenExpires ?? remote?.ebayTokenExpires,
     ebayMarketplace: local?.ebayMarketplace || remote?.ebayMarketplace,
+    bio: local?.bio || remote?.bio,
+    avatarUrl: local?.avatarUrl || remote?.avatarUrl,
+    shipName: local?.shipName || remote?.shipName,
+    shipLine1: local?.shipLine1 || remote?.shipLine1,
+    shipCity: local?.shipCity || remote?.shipCity,
+    shipRegion: local?.shipRegion || remote?.shipRegion,
+    shipPostal: local?.shipPostal || remote?.shipPostal,
+    shipCountry: local?.shipCountry || remote?.shipCountry,
+    inviteCode: local?.inviteCode || remote?.inviteCode,
   });
 }

@@ -31,7 +31,7 @@ export default async function ShopPage({
   const session = await getSessionUser();
   const owner = findUserByShopSlug(slug);
   const shop = owner
-    ? shopFromAccount(owner.name, owner.shopSlug)
+    ? shopFromAccount(owner.name, owner.shopSlug, owner.bio)
     : session?.shopSlug === slug
       ? shopFromAccount(session.name, slug)
       : getShop(slug);

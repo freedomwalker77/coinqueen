@@ -210,13 +210,13 @@ export const SEED_LISTINGS: Listing[] = [
   },
 ];
 
-export function shopFromAccount(name: string, slug: string): Shop {
+export function shopFromAccount(name: string, slug: string, bio?: string): Shop {
   return {
     slug,
     name: name.trim() || shopNameFromSlug(slug),
     rating: 5,
     reviews: 0,
-    blurb: "Collector shop on MyVaultExchange.",
+    blurb: bio?.trim() || "Collector shop on MyVaultExchange.",
   };
 }
 

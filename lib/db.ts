@@ -20,6 +20,15 @@ export type UserRecord = {
   ebayAccessToken?: string;
   ebayTokenExpires?: number;
   ebayMarketplace?: string;
+  bio?: string;
+  avatarUrl?: string;
+  shipName?: string;
+  shipLine1?: string;
+  shipCity?: string;
+  shipRegion?: string;
+  shipPostal?: string;
+  shipCountry?: string;
+  inviteCode?: string;
 };
 
 type UsersFile = { users: UserRecord[] };
@@ -103,6 +112,17 @@ export function updateUser(
       | "ebayAccessToken"
       | "ebayTokenExpires"
       | "ebayMarketplace"
+      | "name"
+      | "passwordHash"
+      | "bio"
+      | "avatarUrl"
+      | "shipName"
+      | "shipLine1"
+      | "shipCity"
+      | "shipRegion"
+      | "shipPostal"
+      | "shipCountry"
+      | "inviteCode"
     >
   >,
 ) {
@@ -158,6 +178,14 @@ export function loadAllUserListings() {
     }
   }
   return listings;
+}
+
+export function deleteUser(id: string) {
+  const file = readUsers();
+  const next = file.users.filter((row) => row.id !== id);
+  if (next.length === file.users.length) return false;
+  writeUsers({ users: next });
+  return true;
 }
 
 export function listPublicUsers() {
