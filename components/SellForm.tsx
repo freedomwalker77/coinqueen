@@ -66,8 +66,8 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
                 setTimeout(() => resolve({ error: "eBay took too long. Your shop listing still published." }), 15_000);
               }),
             ]);
-            if (result.error) ebayError = result.error;
-            else ebayUrl = result.url;
+            if ("error" in result && result.error) ebayError = result.error;
+            else if ("url" in result) ebayUrl = result.url;
           } catch {
             ebayError = "eBay took too long. Your shop listing still published.";
           }

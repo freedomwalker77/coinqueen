@@ -23,22 +23,22 @@ export type UserRecord = {
 
 type UsersFile = { users: UserRecord[] };
 
-const bundledDir = path.join(process.cwd(), "data");
+const bundledDir = path.join(/* turbopackIgnore: true */ process.cwd(), "data");
 const writableDir = process.env.VERCEL ? "/tmp/myvaultexchange-data" : bundledDir;
-const usersPath = path.join(writableDir, "users.json");
-const bundledUsersPath = path.join(bundledDir, "users.json");
-const marketsDir = path.join(writableDir, "markets");
-const bundledMarketsDir = path.join(bundledDir, "markets");
+const usersPath = path.join(/* turbopackIgnore: true */ writableDir, "users.json");
+const bundledUsersPath = path.join(/* turbopackIgnore: true */ bundledDir, "users.json");
+const marketsDir = path.join(/* turbopackIgnore: true */ writableDir, "markets");
+const bundledMarketsDir = path.join(/* turbopackIgnore: true */ bundledDir, "markets");
 
 function ensureWritable() {
-  mkdirSync(marketsDir, { recursive: true });
+  mkdirSync(/* turbopackIgnore: true */ marketsDir, { recursive: true });
 }
 
 function readUsers(): UsersFile {
   for (const file of [usersPath, bundledUsersPath]) {
     try {
-      if (!existsSync(file)) continue;
-      return JSON.parse(readFileSync(file, "utf8")) as UsersFile;
+      if (!existsSync(/* turbopackIgnore: true */ file)) continue;
+      return JSON.parse(readFileSync(/* turbopackIgnore: true */ file, "utf8")) as UsersFile;
     } catch {
       /* try the next path */
     }
@@ -48,7 +48,7 @@ function readUsers(): UsersFile {
 
 function writeUsers(file: UsersFile) {
   ensureWritable();
-  writeFileSync(usersPath, JSON.stringify(file, null, 2));
+  writeFileSync(/* turbopackIgnore: true */ usersPath, JSON.stringify(file, null, 2));
 }
 
 export function createUser(input: { name: string; email: string; passwordHash: string }) {
@@ -113,15 +113,15 @@ export function updateUser(
 }
 
 function marketPath(userId: string) {
-  return path.join(marketsDir, `${userId}.json`);
+  return path.join(/* turbopackIgnore: true */ marketsDir, `${userId}.json`);
 }
 
 export function loadUserMarket(userId: string): MarketState {
   for (const dir of [marketsDir, bundledMarketsDir]) {
     try {
-      const file = path.join(dir, `${userId}.json`);
-      if (!existsSync(file)) continue;
-      return { ...emptyMarket, ...JSON.parse(readFileSync(file, "utf8")) };
+      const file = path.join(/* turbopackIgnore: true */ dir, `${userId}.json`);
+      if (!existsSync(/* turbopackIgnore: true */ file)) continue;
+      return { ...emptyMarket, ...JSON.parse(readFileSync(/* turbopackIgnore: true */ file, "utf8")) };
     } catch {
       /* try the next path */
     }
@@ -131,18 +131,20 @@ export function loadUserMarket(userId: string): MarketState {
 
 export function saveUserMarket(userId: string, state: MarketState) {
   ensureWritable();
-  writeFileSync(marketPath(userId), JSON.stringify(state));
+  writeFileSync(/* turbopackIgnore: true */ marketPath(userId), JSON.stringify(state));
 }
 
 export function loadAllUserListings() {
   const listings: Listing[] = [];
   const seen = new Set<string>();
   for (const dir of [marketsDir, bundledMarketsDir]) {
-    if (!existsSync(dir)) continue;
-    for (const file of readdirSync(dir)) {
+    if (!existsSync(/* turbopackIgnore: true */ dir)) continue;
+    for (const file of readdirSync(/* turbopackIgnore: true */ dir)) {
       if (!file.endsWith(".json")) continue;
       try {
-        const state = JSON.parse(readFileSync(path.join(dir, file), "utf8")) as MarketState;
+        const state = JSON.parse(
+          readFileSync(path.join(/* turbopackIgnore: true */ dir, file), "utf8"),
+        ) as MarketState;
         for (const listing of state.listings ?? []) {
           if (seen.has(listing.id)) continue;
           seen.add(listing.id);
