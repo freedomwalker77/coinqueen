@@ -147,22 +147,40 @@ function categoryId(item: CatalogItem) {
   }
 }
 
-async function firstPolicyId(token: string, kind: "fulfillment_policy" | "payment_policy" | "return_policy") {
-  const marketplace = ebayMarketplace();
+async function firstPolicyId(
+  token: string,
+  kind: "fulfillment_policy" | "payment_policy" | "return_policy",
+  marketplace: string,
+) {
   const response = await ebayFetch(token, `/sell/account/v1/${kind}?marketplace_id=${marketplace}`);
-  const json = (await response.json()) as Record<string, Array<{ fulfillmentPolicyId?: string; paymentPolicyId?: string; returnPolicyId?: string }>>;
+  const json = (await response.json()) as Record<
+    string,
+    Array<{ fulfillmentPolicyId?: string; paymentPolicyId?: string; returnPolicyId?: string }>
+  >;
   if (!response.ok) return null;
-  const rows =
-    json.fulfillmentPolicies ?? json.paymentPolicies ?? json.returnPolicies ?? [];
+  const rows = json.fulfillmentPolicies ?? json.paymentPolicies ?? json.returnPolicies ?? [];
   const first = rows[0];
   return first?.fulfillmentPolicyId || first?.paymentPolicyId || first?.returnPolicyId || null;
 }
 
+async function policiesFor(token: string, marketplace: string) {
+  const [fulfillmentPolicyId, paymentPolicyId, returnPolicyId] = await Promise.all([
+    firstPolicyId(token, "fulfillment_policy", marketplace),
+    firstPolicyId(token, "payment_policy", marketplace),
+    firstPolicyId(token, "return_policy", marketplace),
+  ]);
+  if (!fulfillmentPolicyId || !paymentPolicyId || !returnPolicyId) return null;
+  return { fulfillmentPolicyId, paymentPolicyId, returnPolicyId };
+}
+
 async function firstLocationKey(token: string) {
   const response = await ebayFetch(token, "/sell/inventory/v1/location?limit=20");
-  const json = (await response.json()) as { locations?: Array<{ merchantLocationKey?: string }> };
+  const json = (await response.json()) as {
+    locations?: Array<{ merchantLocationKey?: string; merchantLocationStatus?: string }>;
+  };
   if (!response.ok) return null;
-  return json.locations?.[0]?.merchantLocationKey ?? null;
+  const enabled = json.locations?.find((row) => row.merchantLocationStatus !== "DISABLED") ?? json.locations?.[0];
+  return enabled?.merchantLocationKey ?? null;
 }
 
 export async function publishToEbay(input: {
@@ -202,26 +220,19 @@ async function publishToEbayInner(input: {
     return { error: "eBay needs a public https photo URL." as const };
   }
 
-  const [locationKey, fulfillmentPolicyId, paymentPolicyId, returnPolicyId] = await Promise.all([
-    firstLocationKey(token),
-    firstPolicyId(token, "fulfillment_policy"),
-    firstPolicyId(token, "payment_policy"),
-    firstPolicyId(token, "return_policy"),
-  ]);
+  const preferred = ebayMarketplace();
+  const marketplaces = preferred === "EBAY_CA" ? ["EBAY_CA", "EBAY_US"] : [preferred, "EBAY_CA", "EBAY_US"];
+  const uniqueMarketplaces = [...new Set(marketplaces)];
+
+  const locationKey = await firstLocationKey(token);
   if (!locationKey) {
     return {
       error:
         "No eBay inventory location yet. In Seller Hub, add a business location (or create an inventory location), then try again.",
     } as const;
   }
-  if (!fulfillmentPolicyId || !paymentPolicyId || !returnPolicyId) {
-    return {
-      error:
-        "eBay is missing Payment, Return, or Shipping (fulfillment) policies. Create them in Seller Hub for this marketplace, then retry.",
-    } as const;
-  }
 
-  const sku = input.sku.replace(/[^A-Za-z0-9_-]/g, "").slice(0, 50) || `mve-${Date.now()}`;
+  const sku = `mve${Date.now()}`.slice(0, 50);
   const title = `${input.item.shortName} ${input.grade}`.slice(0, 80);
   const description = [input.item.description, input.note, `Grade: ${input.grade}`, "Listed from MyVaultExchange."]
     .filter(Boolean)
@@ -245,42 +256,50 @@ async function publishToEbayInner(input: {
     return { error: `eBay could not save the item (${itemRes.status}): ${text.slice(0, 240)}` as const };
   }
 
-  const offerRes = await ebayFetch(token, "/sell/inventory/v1/offer", {
-    method: "POST",
-    body: JSON.stringify({
-      sku,
-      marketplaceId: ebayMarketplace(),
-      format: "FIXED_PRICE",
-      availableQuantity: 1,
-      categoryId: categoryId(input.item),
-      listingDescription: description,
-      listingPolicies: {
-        fulfillmentPolicyId,
-        paymentPolicyId,
-        returnPolicyId,
-      },
-      merchantLocationKey: locationKey,
-      pricingSummary: {
-        price: { value: input.price.toFixed(2), currency: "USD" },
-      },
-    }),
-  });
-  const offerJson = (await offerRes.json()) as { offerId?: string; errors?: Array<{ message?: string }> };
-  if (!offerRes.ok || !offerJson.offerId) {
-    const message = offerJson.errors?.map((row) => row.message).filter(Boolean).join("; ") || `eBay offer failed (${offerRes.status})`;
-    return { error: message as string };
+  let lastError = "eBay could not create an offer on eBay.ca or eBay.com.";
+  for (const marketplace of uniqueMarketplaces) {
+    const policies = await policiesFor(token, marketplace);
+    if (!policies) continue;
+    const currency = marketplace === "EBAY_CA" ? "CAD" : "USD";
+    const offerRes = await ebayFetch(token, "/sell/inventory/v1/offer", {
+      method: "POST",
+      body: JSON.stringify({
+        sku,
+        marketplaceId: marketplace,
+        format: "FIXED_PRICE",
+        availableQuantity: 1,
+        categoryId: categoryId(input.item),
+        listingDescription: description,
+        listingPolicies: policies,
+        merchantLocationKey: locationKey,
+        pricingSummary: {
+          price: { value: input.price.toFixed(2), currency },
+        },
+      }),
+    });
+    const offerJson = (await offerRes.json()) as { offerId?: string; errors?: Array<{ message?: string }> };
+    if (!offerRes.ok || !offerJson.offerId) {
+      lastError =
+        offerJson.errors?.map((row) => row.message).filter(Boolean).join("; ") ||
+        `eBay offer failed on ${marketplace} (${offerRes.status})`;
+      continue;
+    }
+
+    const pubRes = await ebayFetch(token, `/sell/inventory/v1/offer/${offerJson.offerId}/publish`, {
+      method: "POST",
+      body: "{}",
+    });
+    const pubJson = (await pubRes.json()) as { listingId?: string; errors?: Array<{ message?: string }> };
+    if (!pubRes.ok || !pubJson.listingId) {
+      lastError =
+        pubJson.errors?.map((row) => row.message).filter(Boolean).join("; ") ||
+        `eBay publish failed on ${marketplace} (${pubRes.status})`;
+      continue;
+    }
+
+    const host = marketplace === "EBAY_CA" ? "https://www.ebay.ca" : "https://www.ebay.com";
+    return { url: `${host}/itm/${pubJson.listingId}` };
   }
 
-  const pubRes = await ebayFetch(token, `/sell/inventory/v1/offer/${offerJson.offerId}/publish`, {
-    method: "POST",
-    body: "{}",
-  });
-  const pubJson = (await pubRes.json()) as { listingId?: string; errors?: Array<{ message?: string }> };
-  if (!pubRes.ok || !pubJson.listingId) {
-    const message = pubJson.errors?.map((row) => row.message).filter(Boolean).join("; ") || `eBay publish failed (${pubRes.status})`;
-    return { error: message as string };
-  }
-
-  const host = ebayMarketplace() === "EBAY_CA" ? "https://www.ebay.ca" : "https://www.ebay.com";
-  return { url: `${host}/itm/${pubJson.listingId}` };
+  return { error: lastError };
 }
