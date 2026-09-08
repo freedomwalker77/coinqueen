@@ -129,13 +129,16 @@ async function ebayFetch(token: string, path: string, init?: RequestInit) {
     headers["Content-Length"] = String(Buffer.byteLength(body));
   }
 
-  return new Promise<Response>((resolve, reject) => {
+  const request = new Promise<Response>((resolve, reject) => {
     const req = https.request(
       {
         hostname: url.hostname,
+        port: 443,
         path: `${url.pathname}${url.search}`,
         method,
         headers,
+        family: 4,
+        timeout: 8_000,
       },
       (res) => {
         const chunks: Buffer[] = [];
@@ -150,7 +153,7 @@ async function ebayFetch(token: string, path: string, init?: RequestInit) {
         });
       },
     );
-    req.setTimeout(20_000, () => {
+    req.on("timeout", () => {
       req.destroy();
       reject(new Error("eBay timed out."));
     });
@@ -158,6 +161,13 @@ async function ebayFetch(token: string, path: string, init?: RequestInit) {
     if (body) req.write(body);
     req.end();
   });
+
+  return Promise.race([
+    request,
+    new Promise<Response>((_, reject) => {
+      setTimeout(() => reject(new Error("eBay timed out.")), 8_000);
+    }),
+  ]);
 }
 
 function categoryId(item: CatalogItem) {
