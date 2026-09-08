@@ -209,23 +209,27 @@ export const SEED_LISTINGS: Listing[] = [
 export function shopFromAccount(name: string, slug: string): Shop {
   return {
     slug,
-    name: `${name}'s shop`,
+    name: name.trim() || shopNameFromSlug(slug),
     rating: 5,
     reviews: 0,
     blurb: "Collector shop on MyVaultExchange.",
   };
 }
 
+function shopNameFromSlug(slug: string) {
+  return slug
+    .replace(/-[0-9a-f]{6}$/i, "")
+    .replace(/-/g, " ")
+    .replace(/\b\w/g, (char) => char.toUpperCase());
+}
+
 export function getShop(slug: string) {
   const known = SHOPS.find((shop) => shop.slug === slug);
   if (known) return known;
   if (!slug) return undefined;
-  const label = slug
-    .replace(/-/g, " ")
-    .replace(/\b\w/g, (char) => char.toUpperCase());
   return {
     slug,
-    name: slug === MY_SHOP.slug ? MY_SHOP.name : `${label}`,
+    name: slug === MY_SHOP.slug ? MY_SHOP.name : shopNameFromSlug(slug),
     rating: 5,
     reviews: 0,
     blurb: "Collector shop on MyVaultExchange.",

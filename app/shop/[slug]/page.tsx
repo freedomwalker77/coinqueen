@@ -2,6 +2,7 @@ import { Footer, Header } from "@/components/Chrome";
 import { MarketGrid } from "@/components/MarketGrid";
 import { findUserByShopSlug } from "@/lib/db";
 import { getShop, shopFromAccount } from "@/lib/market";
+import { getSessionUser } from "@/lib/session";
 import { notFound } from "next/navigation";
 
 function safeEbayListingUrl(raw?: string) {
@@ -26,8 +27,13 @@ export default async function ShopPage({
   const { slug } = await params;
   const { listed, ebay, ebay_error: ebayError } = await searchParams;
   const ebayUrl = safeEbayListingUrl(ebay);
+  const session = await getSessionUser();
   const owner = findUserByShopSlug(slug);
-  const shop = owner ? shopFromAccount(owner.name, owner.shopSlug) : getShop(slug);
+  const shop = owner
+    ? shopFromAccount(owner.name, owner.shopSlug)
+    : session?.shopSlug === slug
+      ? shopFromAccount(session.name, slug)
+      : getShop(slug);
   if (!shop) notFound();
 
   return (
