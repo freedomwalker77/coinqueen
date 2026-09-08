@@ -3,6 +3,7 @@ import "server-only";
 import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import path from "node:path";
 import type { Listing } from "./market";
+import { isSampleListing, listingBelongsOnShop } from "./market";
 import { emptyMarket, type MarketState } from "./marketState";
 
 export type UserRecord = {
@@ -36,6 +37,7 @@ export type UserRecord = {
   ebayPlanSubscriptionId?: string;
   ebayPlanStatus?: string;
   ebayPlanPeriodEnd?: number;
+  shopPostedClearedAt?: string;
 };
 
 type UsersFile = { users: UserRecord[] };
@@ -138,6 +140,7 @@ export function updateUser(
       | "ebayPlanSubscriptionId"
       | "ebayPlanStatus"
       | "ebayPlanPeriodEnd"
+      | "shopPostedClearedAt"
     >
   >,
 ) {
@@ -174,6 +177,7 @@ export function saveUserMarket(userId: string, state: MarketState) {
 export function loadAllUserListings() {
   const listings: Listing[] = [];
   const seen = new Set<string>();
+  const wipeBySlug = new Map(readUsers().users.map((user) => [user.shopSlug, user.shopPostedClearedAt]));
   for (const dir of [marketsDir, bundledMarketsDir]) {
     if (!existsSync(/* turbopackIgnore: true */ dir)) continue;
     for (const file of readdirSync(/* turbopackIgnore: true */ dir)) {
@@ -184,6 +188,9 @@ export function loadAllUserListings() {
         ) as MarketState;
         for (const listing of state.listings ?? []) {
           if (seen.has(listing.id)) continue;
+          if (isSampleListing(listing)) continue;
+          const wipedAt = wipeBySlug.get(listing.shopSlug);
+          if (wipedAt && !listingBelongsOnShop(listing, listing.shopSlug, wipedAt)) continue;
           seen.add(listing.id);
           listings.push(listing);
         }

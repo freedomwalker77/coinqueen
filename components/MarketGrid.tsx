@@ -2,7 +2,7 @@
 
 import { getPublicListings } from "@/app/actions/market";
 import { useMarket } from "@/lib/localMarket";
-import { SEED_LISTINGS, type Listing } from "@/lib/market";
+import { isDemoShop, isSampleListing, SEED_LISTINGS, type Listing } from "@/lib/market";
 import { useEffect, useState } from "react";
 import { ListingCard } from "./ListingCard";
 
@@ -19,14 +19,16 @@ export function MarketGrid({
 }) {
   const { ready, listings } = useMarket();
   const [publicListings, setPublicListings] = useState<Listing[]>([]);
+  const realShop = Boolean(shopSlug && !isDemoShop(shopSlug));
 
   useEffect(() => {
     void getPublicListings().then(setPublicListings);
   }, []);
 
+  const fallback = realShop ? [] : SEED_LISTINGS;
   const seen = new Set<string>();
   const source: Listing[] = [];
-  for (const row of [...(ready ? listings : SEED_LISTINGS), ...publicListings]) {
+  for (const row of [...(ready ? listings : fallback), ...publicListings]) {
     if (seen.has(row.id)) continue;
     seen.add(row.id);
     source.push(row);
@@ -36,6 +38,7 @@ export function MarketGrid({
   let rows = source;
   if (catalogId) rows = rows.filter((row) => row.catalogId === catalogId);
   if (shopSlug) rows = rows.filter((row) => row.shopSlug === shopSlug);
+  if (realShop) rows = rows.filter((row) => !isSampleListing(row));
   if (limit) rows = rows.slice(0, limit);
 
   if (rows.length === 0) {

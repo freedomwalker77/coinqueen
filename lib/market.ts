@@ -29,6 +29,16 @@ export function isSampleListing(listing: { seed?: boolean; id: string }) {
   return listing.seed === true || listing.id.startsWith("seed-");
 }
 
+export function listingBelongsOnShop(listing: Listing, shopSlug: string, wipedAt?: string | null) {
+  if (listing.shopSlug !== shopSlug) return true;
+  if (isSampleListing(listing)) return false;
+  if (!wipedAt) return false;
+  const created = Date.parse(listing.createdAt);
+  const wiped = Date.parse(wipedAt);
+  if (!Number.isFinite(created) || !Number.isFinite(wiped)) return false;
+  return created > wiped;
+}
+
 export function isDemoShop(slug: string) {
   return SHOPS.some((shop) => shop.slug === slug && shop.slug !== MY_SHOP.slug);
 }

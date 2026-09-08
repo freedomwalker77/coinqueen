@@ -41,5 +41,6 @@ export async function resolvePersistedUser(
     ebayPlanSubscriptionId: local?.ebayPlanSubscriptionId || remote?.ebayPlanSubscriptionId,
     ebayPlanStatus: local?.ebayPlanStatus || remote?.ebayPlanStatus,
     ebayPlanPeriodEnd: local?.ebayPlanPeriodEnd ?? remote?.ebayPlanPeriodEnd,
+    shopPostedClearedAt: local?.shopPostedClearedAt || remote?.shopPostedClearedAt,
   });
 }
