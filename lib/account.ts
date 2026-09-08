@@ -5,15 +5,20 @@ import { findUserById, findUserByShopSlug, upsertUser, type UserRecord } from ".
 import { loadGhlAccount } from "./ghl";
 
 export async function resolvePersistedUser(session: SessionUser): Promise<UserRecord | null> {
-  const local = findUserById(session.id) ?? (session.shopSlug ? findUserByShopSlug(session.shopSlug) : undefined);
-  if (local) return local;
-  if (!session.email) return null;
-  const remote = await loadGhlAccount(session.email);
-  if (!remote) return null;
+  const local =
+    findUserById(session.id) ?? (session.shopSlug ? findUserByShopSlug(session.shopSlug) : undefined) ?? null;
+  const remote = session.email ? await loadGhlAccount(session.email) : null;
+  if (!local && !remote) return null;
+  const base = remote ?? local!;
   return upsertUser({
-    ...remote,
+    ...base,
+    ...local,
     id: session.id,
-    name: session.name || remote.name,
-    shopSlug: session.shopSlug || remote.shopSlug,
+    name: session.name || local?.name || base.name,
+    email: (session.email || local?.email || base.email).toLowerCase(),
+    shopSlug: session.shopSlug || local?.shopSlug || base.shopSlug,
+    ebayRefreshToken: local?.ebayRefreshToken || remote?.ebayRefreshToken,
+    ebayAccessToken: local?.ebayAccessToken || remote?.ebayAccessToken,
+    ebayTokenExpires: local?.ebayTokenExpires ?? remote?.ebayTokenExpires,
   });
 }

@@ -11,17 +11,20 @@ export function ConnectEbay({
   status?: string;
   reason?: string;
 }) {
+  const flashConnected = status === "connected";
   const message =
-    status === "connected"
-      ? "eBay account connected. New listings can go to eBay too."
-      : status === "denied"
-        ? reason || "eBay sign-in was cancelled."
-        : status === "need_runame"
-          ? "Add EBAY_RUNAME in env (the RuName from eBay Developer, not the https URL), then try again."
-          : status === "error"
-            ? reason ||
-              "eBay did not finish connecting. Log out, log in, then try again. If it still fails, enable sell.inventory and sell.account on this RuName."
-            : null;
+    connected
+      ? "eBay is connected. Check Also list on eBay when you publish."
+      : flashConnected
+        ? "eBay signed you in, but the connection was not saved. Click Sign in with eBay again."
+        : status === "denied"
+          ? reason || "eBay sign-in was cancelled."
+          : status === "need_runame"
+            ? "Add EBAY_RUNAME in env (the RuName from eBay Developer, not the https URL), then try again."
+            : status === "error"
+              ? reason ||
+                "eBay did not finish connecting. Log out, log in, then try again. If it still fails, enable sell.inventory and sell.account on this RuName."
+              : null;
 
   return (
     <div className="mb-8 rounded-2xl border border-money/20 bg-queen-deep p-5">
@@ -32,7 +35,11 @@ export function ConnectEbay({
         plus a business location in Seller Hub.
       </p>
       {message ? (
-        <p className={`mt-3 text-sm ${status === "connected" ? "text-money" : "text-red-700"}`}>{message}</p>
+        <p
+          className={`mt-3 text-sm ${connected ? "text-money" : "text-red-700"}`}
+        >
+          {message}
+        </p>
       ) : null}
       {!configured ? (
         <p className="mt-3 text-sm text-cream/50">
@@ -40,7 +47,7 @@ export function ConnectEbay({
           user token.
         </p>
       ) : connected ? (
-        <p className="mt-3 text-sm text-money">Connected. Use the checkbox on the form below.</p>
+        <p className="mt-3 text-sm text-money">Connected. The Also list on eBay checkbox is on the form below.</p>
       ) : (
         <Link
           href="/api/ebay/connect"

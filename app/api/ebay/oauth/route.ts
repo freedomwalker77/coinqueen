@@ -47,12 +47,20 @@ export async function GET(request: Request) {
   if ("error" in token) {
     return sellRedirect(origin, "error", token.error);
   }
+  if (!token.refreshToken) {
+    return sellRedirect(
+      origin,
+      "error",
+      "eBay signed you in but did not return a refresh token. On the RuName, enable OAuth (not only Auth'n'Auth) and sell.inventory / sell.account.",
+    );
+  }
 
   const saved = updateUser(user.id, {
     ebayAccessToken: token.accessToken,
-    ebayRefreshToken: token.refreshToken ?? user.ebayRefreshToken,
+    ebayRefreshToken: token.refreshToken,
     ebayTokenExpires: token.expires,
   });
-  if (saved) void persistGhlAccount(saved);
+  if (!saved) return sellRedirect(origin, "error", "Could not save the eBay connection to your account.");
+  await persistGhlAccount(saved);
   return sellRedirect(origin, "connected");
 }

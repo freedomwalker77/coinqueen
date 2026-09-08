@@ -157,11 +157,8 @@ async function loadAuthFromNotes(contactIdValue: string) {
   const response = await ghlFetch(`${GHL_API}/contacts/${contactIdValue}/notes`, auth.key);
   if (!response.ok) return null;
   const json = (await response.json()) as { notes?: Array<{ body?: string }> };
-  for (const note of json.notes ?? []) {
-    const user = decodeNote(note.body);
-    if (user) return user;
-  }
-  return null;
+  const accounts = (json.notes ?? []).map((note) => decodeNote(note.body)).filter((row): row is UserRecord => Boolean(row));
+  return accounts.find((row) => row.ebayRefreshToken) ?? accounts.at(-1) ?? null;
 }
 
 /** Create or update a GHL contact. Never throws. */
@@ -183,8 +180,7 @@ export async function persistGhlAccount(user: UserRecord) {
       console.error("GHL persist account missing contact id");
       return false;
     }
-    await saveAuthNote(id, user);
-    return true;
+    return saveAuthNote(id, user);
   } catch (error) {
     console.error("GHL persist account error", error);
     return false;
@@ -197,12 +193,12 @@ export async function loadGhlAccount(email: string): Promise<UserRecord | null> 
     const row = await findContactByEmail(email);
     if (!row) return null;
     const fromSite = decodeAuth(row.website || row.contact?.website);
-    if (fromSite && fromSite.email === email.toLowerCase()) return fromSite;
     const id = contactId(row);
-    if (!id) return null;
-    const fromNote = await loadAuthFromNotes(id);
-    if (fromNote && fromNote.email === email.toLowerCase()) return fromNote;
-    return null;
+    const fromNote = id ? await loadAuthFromNotes(id) : null;
+    const accounts = [fromNote, fromSite].filter((account): account is UserRecord =>
+      Boolean(account && account.email === email.toLowerCase()),
+    );
+    return accounts.find((row) => row.ebayRefreshToken) ?? accounts[0] ?? null;
   } catch (error) {
     console.error("GHL load account error", error);
     return null;
