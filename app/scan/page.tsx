@@ -9,7 +9,7 @@ export default function ScanPage() {
         <p className="text-xs uppercase tracking-[0.22em] text-money">AI scanner</p>
         <h1 className="mt-2 font-serif text-4xl text-money">Identify & price</h1>
         <p className="mt-2 max-w-2xl text-cream/70">
-          On a phone, tap Take photo — that opens the camera. Add MyVaultExchange to your home screen
+          On a phone, tap Take photo to snap a picture. Add MyVaultExchange to your home screen
           (Safari Share → Add to Home Screen, or Chrome Install app) to use it like an app. The same
           Scan page is the website and the phone app.
         </p>

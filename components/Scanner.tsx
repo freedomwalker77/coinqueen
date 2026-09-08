@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import Link from "next/link";
 import { catalog, formatMoney, type CatalogItem } from "@/lib/catalog";
 import type { CompFeed } from "@/lib/comps";
@@ -66,8 +66,6 @@ export function Scanner({
   photoIdReady?: boolean;
   ebayReady?: boolean;
 }) {
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const [cameraOn, setCameraOn] = useState(false);
   const [preview, setPreview] = useState<string | null>(null);
   const [file, setFile] = useState<File | null>(null);
   const [busy, setBusy] = useState(false);
@@ -81,42 +79,6 @@ export function Scanner({
     denomination: "",
     type: "" as "" | "coin" | "note",
   });
-
-  useEffect(() => {
-    let stream: MediaStream | undefined;
-    if (!cameraOn) return;
-    navigator.mediaDevices
-      .getUserMedia({ video: { facingMode: { ideal: "environment" } } })
-      .then((media) => {
-        stream = media;
-        if (videoRef.current) videoRef.current.srcObject = media;
-      })
-      .catch(() => {
-        setError("Camera permission was blocked. You can still upload a photo.");
-        setCameraOn(false);
-      });
-    return () => {
-      stream?.getTracks().forEach((track) => track.stop());
-    };
-  }, [cameraOn]);
-
-  function captureFrame() {
-    const video = videoRef.current;
-    if (!video) return;
-    const canvas = document.createElement("canvas");
-    canvas.width = video.videoWidth || 720;
-    canvas.height = video.videoHeight || 480;
-    canvas.getContext("2d")?.drawImage(video, 0, 0);
-    canvas.toBlob((blob) => {
-      if (!blob) return;
-      const next = new File([blob], "scan.jpg", { type: "image/jpeg" });
-      setFile(next);
-      setPreview(URL.createObjectURL(blob));
-      setCameraOn(false);
-      setResult(null);
-      void identify({ image: next });
-    }, "image/jpeg", 0.86);
-  }
 
   async function identify(extra?: { sampleId?: string; image?: File }) {
     setBusy(true);
@@ -160,7 +122,6 @@ export function Scanner({
       const ready = await prepareScanFile(next);
       setFile(ready);
       setPreview(URL.createObjectURL(ready));
-      setCameraOn(false);
       setResult(null);
       void identify({ image: ready });
     } catch (err) {
@@ -193,46 +154,16 @@ export function Scanner({
           {preview ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={preview} alt="Scan preview" className="max-h-[420px] w-full object-contain bg-black/40" />
-          ) : cameraOn ? (
-            <video
-              ref={videoRef}
-              autoPlay
-              playsInline
-              muted
-              className="max-h-[420px] w-full bg-black object-cover"
-            />
           ) : (
             <div className="flex h-72 flex-col items-center justify-center gap-3 px-6 text-center text-cream/60">
-              <p className="font-serif text-2xl text-gold">Point the camera at a coin or note</p>
+              <p className="font-serif text-2xl text-gold">Take or upload a photo of a coin or note</p>
               <p className="max-w-sm text-sm">
-                Snap a photo or upload one. Identification and last-sold comps run as soon as the
-                picture is in.
+                Identification and last-sold comps run as soon as the picture is in.
               </p>
             </div>
           )}
         </div>
         <div className="flex flex-wrap gap-2">
-          {!cameraOn ? (
-            <button
-              type="button"
-              onClick={() => {
-                setPreview(null);
-                setFile(null);
-                setCameraOn(true);
-              }}
-              className="rounded-full bg-gold px-4 py-2 font-medium text-queen-ink hover:bg-gold-bright"
-            >
-              Open camera
-            </button>
-          ) : (
-            <button
-              type="button"
-              onClick={captureFrame}
-              className="rounded-full bg-gold px-4 py-2 font-medium text-queen-ink hover:bg-gold-bright"
-            >
-              Capture
-            </button>
-          )}
           <label className="cursor-pointer rounded-full bg-gold px-4 py-2 font-medium text-queen-ink hover:bg-gold-bright">
             Take photo
             <input
