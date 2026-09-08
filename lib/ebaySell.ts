@@ -149,6 +149,10 @@ async function ebayFetch(token: string, path: string, init?: RequestInit) {
         });
       },
     );
+    req.setTimeout(12_000, () => {
+      req.destroy();
+      reject(new Error("eBay timed out."));
+    });
     req.on("error", reject);
     if (body) req.write(body);
     req.end();
@@ -198,6 +202,23 @@ export async function publishToEbay(input: {
   note?: string;
   imageUrl: string;
 }) {
+  try {
+    return await publishToEbayInner(input);
+  } catch (error) {
+    const message = error instanceof Error ? error.message : "eBay request failed.";
+    return { error: message };
+  }
+}
+
+async function publishToEbayInner(input: {
+  user: UserRecord;
+  sku: string;
+  item: CatalogItem;
+  grade: string;
+  price: number;
+  note?: string;
+  imageUrl: string;
+}) {
   const token = await userAccessToken(input.user);
   if (typeof token !== "string") return token;
 
@@ -209,16 +230,18 @@ export async function publishToEbay(input: {
     return { error: "eBay needs a public https photo URL." as const };
   }
 
-  const locationKey = await firstLocationKey(token);
+  const [locationKey, fulfillmentPolicyId, paymentPolicyId, returnPolicyId] = await Promise.all([
+    firstLocationKey(token),
+    firstPolicyId(token, "fulfillment_policy"),
+    firstPolicyId(token, "payment_policy"),
+    firstPolicyId(token, "return_policy"),
+  ]);
   if (!locationKey) {
     return {
       error:
         "No eBay inventory location yet. In Seller Hub, add a business location (or create an inventory location), then try again.",
     } as const;
   }
-  const fulfillmentPolicyId = await firstPolicyId(token, "fulfillment_policy");
-  const paymentPolicyId = await firstPolicyId(token, "payment_policy");
-  const returnPolicyId = await firstPolicyId(token, "return_policy");
   if (!fulfillmentPolicyId || !paymentPolicyId || !returnPolicyId) {
     return {
       error:

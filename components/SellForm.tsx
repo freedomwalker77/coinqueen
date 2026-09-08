@@ -42,36 +42,45 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
           setError("eBay needs a public https photo URL.");
           return;
         }
+        if (alsoEbay && /imgur\.com\/(a|gallery)\//i.test(photoUrl)) {
+          setError("That Imgur link is an album page. Open the photo, right-click it, Copy image address (i.imgur.com/…), then paste that.");
+          return;
+        }
         setBusy(true);
         setError(null);
         const listingId = `user-${Date.now()}`;
         let ebayUrl: string | undefined;
         let ebayError: string | undefined;
-        if (alsoEbay) {
-          const result = await listOnEbay({
-            listingId,
+        try {
+          if (alsoEbay) {
+            const result = await listOnEbay({
+              listingId,
+              catalogId,
+              grade,
+              price: amount,
+              note,
+              imageUrl: photoUrl,
+            });
+            if (result.error) ebayError = result.error;
+            else ebayUrl = result.url;
+          }
+          const listing = publishListing({
+            id: listingId,
             catalogId,
             grade,
             price: amount,
+            kind,
             note,
-            imageUrl: photoUrl,
+            ebayUrl,
           });
-          if (result.error) ebayError = result.error;
-          else ebayUrl = result.url;
+          const qs = new URLSearchParams({ listed: listing.id });
+          if (ebayUrl) qs.set("ebay", ebayUrl);
+          if (ebayError) qs.set("ebay_error", ebayError);
+          router.push(`/shop/${listing.shopSlug}?${qs.toString()}`);
+        } catch {
+          setError("Publishing stalled. Uncheck eBay and try again, or wait for the next deploy and retry.");
+          setBusy(false);
         }
-        const listing = publishListing({
-          id: listingId,
-          catalogId,
-          grade,
-          price: amount,
-          kind,
-          note,
-          ebayUrl,
-        });
-        const qs = new URLSearchParams({ listed: listing.id });
-        if (ebayUrl) qs.set("ebay", ebayUrl);
-        if (ebayError) qs.set("ebay_error", ebayError);
-        router.push(`/shop/${listing.shopSlug}?${qs.toString()}`);
       }}
     >
       <label className="block text-sm text-cream/70">
