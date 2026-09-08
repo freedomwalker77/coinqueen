@@ -1,6 +1,7 @@
 import "server-only";
 
 import Stripe from "stripe";
+import { isAdminUser } from "@/lib/admin";
 import { persistGhlAccount } from "@/lib/ghl";
 import { findUserById, findUserByStripeCustomerId, updateUser, type UserRecord } from "@/lib/db";
 import { appOrigin, getStripe, stripeEnabled } from "@/lib/stripe";
@@ -61,6 +62,15 @@ export async function applyEbayPlanCheckoutSession(sessionId: string, expectedUs
 }
 
 export async function refreshEbayPlan(user: UserRecord) {
+  if (isAdminUser(user)) {
+    return {
+      enabled: stripeEnabled(),
+      subscribed: true,
+      status: "admin" as string | null,
+      periodEnd: null as number | null,
+      admin: true,
+    };
+  }
   const stripe = getStripe();
   if (!stripe || !user.ebayPlanSubscriptionId) {
     return {
@@ -68,6 +78,7 @@ export async function refreshEbayPlan(user: UserRecord) {
       subscribed: isEbayPlanActive(user),
       status: user.ebayPlanStatus ?? null,
       periodEnd: user.ebayPlanPeriodEnd ?? null,
+      admin: false,
     };
   }
   try {
@@ -78,6 +89,7 @@ export async function refreshEbayPlan(user: UserRecord) {
       subscribed: isEbayPlanActive(saved),
       status: saved.ebayPlanStatus ?? sub.status,
       periodEnd: saved.ebayPlanPeriodEnd ?? periodEnd(sub),
+      admin: false,
     };
   } catch {
     return {
@@ -85,6 +97,7 @@ export async function refreshEbayPlan(user: UserRecord) {
       subscribed: isEbayPlanActive(user),
       status: user.ebayPlanStatus ?? null,
       periodEnd: user.ebayPlanPeriodEnd ?? null,
+      admin: false,
     };
   }
 }

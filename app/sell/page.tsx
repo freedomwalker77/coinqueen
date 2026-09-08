@@ -58,6 +58,7 @@ export default async function SellPage({
                   configured={ebayStatus.configured}
                   connected={ebayStatus.connected}
                   subscribed={ebayStatus.subscribed}
+                  admin={ebayStatus.admin}
                   planEnabled={ebayStatus.planEnabled}
                   planStatus={ebayStatus.planStatus}
                   planPeriodEnd={ebayStatus.planPeriodEnd}

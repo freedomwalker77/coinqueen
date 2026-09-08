@@ -41,6 +41,7 @@ export function ConnectEbay({
   configured,
   connected,
   subscribed,
+  admin = false,
   planEnabled,
   planStatus,
   planPeriodEnd,
@@ -52,6 +53,7 @@ export function ConnectEbay({
   configured: boolean;
   connected: boolean;
   subscribed: boolean;
+  admin?: boolean;
   planEnabled: boolean;
   planStatus: string | null;
   planPeriodEnd: number | null;
@@ -63,7 +65,9 @@ export function ConnectEbay({
   const flashConnected = status === "connected";
   const message =
     connected
-      ? subscribed
+      ? admin
+        ? "Administrator access: you can publish here and also list on eBay without the monthly plan."
+        : subscribed
         ? "eBay is connected and your monthly plan is active. Check Also list on eBay when you publish."
         : "eBay is connected. Subscribe below to unlock Also list on eBay."
       : flashConnected
@@ -101,13 +105,17 @@ export function ConnectEbay({
       ) : null}
 
       <div className="mt-4 rounded-2xl border border-gold/30 bg-queen p-4">
-        <p className="text-sm font-medium text-queen-ink">Also list on eBay · $14.97 / month</p>
-        <p className="mt-1 text-sm text-cream/55">
-          {subscribed
-            ? `Your plan is ${planStatus ?? "active"}${renews ? ` · renews ${renews}` : ""}.`
-            : "Subscribe to cross-post lots to your connected eBay account. Cancel anytime."}
+        <p className="text-sm font-medium text-queen-ink">
+          {admin ? "Also list on eBay · administrator" : "Also list on eBay · $14.97 / month"}
         </p>
-        {!planEnabled ? (
+        <p className="mt-1 text-sm text-cream/55">
+          {admin
+            ? "This account can cross-post lots to eBay at no charge. Other sellers subscribe at $14.97/month."
+            : subscribed
+              ? `Your plan is ${planStatus ?? "active"}${renews ? ` · renews ${renews}` : ""}.`
+              : "Subscribe to cross-post lots to your connected eBay account. Cancel anytime."}
+        </p>
+        {admin ? null : !planEnabled ? (
           <p className="mt-3 text-sm text-cream/50">Add a Stripe key to take this subscription.</p>
         ) : subscribed ? (
           <div className="mt-3">

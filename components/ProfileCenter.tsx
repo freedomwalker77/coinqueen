@@ -177,7 +177,12 @@ export function ProfileCenter() {
                 </p>
                 <p className="mt-1 text-cream/55">Site: {data.ebayMarketplace}</p>
                 <p className="mt-1 text-cream/55">
-                  Also list on eBay: {data.ebaySubscribed ? "Subscribed" : "$14.97/month on eBay tools"}
+                  Also list on eBay:{" "}
+                  {data.ebayAdmin
+                    ? "Administrator (included)"
+                    : data.ebaySubscribed
+                      ? "Subscribed"
+                      : "$14.97/month on eBay tools"}
                 </p>
               </div>
               <Link href="/sell" className="mt-3 inline-flex text-sm text-gold hover:underline">

@@ -1,6 +1,7 @@
 "use server";
 
 import { resolvePersistedUser } from "@/lib/account";
+import { isAdminEmail } from "@/lib/admin";
 import { refreshEbayPlan } from "@/lib/ebayPlan";
 import { EBAY_SELL_SITES, isEbaySellSite } from "@/lib/ebayMarketplaces";
 import { defaultEbayMarketplace, ebaySellConfigured, publishToEbay } from "@/lib/ebaySell";
@@ -14,11 +15,19 @@ export async function getEbayStatus() {
   const user = session ? await resolvePersistedUser(session) : null;
   const plan = user
     ? await refreshEbayPlan(user)
-    : { enabled: false, subscribed: false, status: null as string | null, periodEnd: null as number | null };
+    : {
+        enabled: false,
+        subscribed: false,
+        status: null as string | null,
+        periodEnd: null as number | null,
+        admin: false,
+      };
+  const admin = Boolean(plan.admin) || isAdminEmail(session?.email);
   return {
     configured: ebaySellConfigured(),
     connected: Boolean(user?.ebayRefreshToken),
-    subscribed: plan.subscribed,
+    subscribed: plan.subscribed || admin,
+    admin,
     planEnabled: plan.enabled,
     planStatus: plan.status,
     planPeriodEnd: plan.periodEnd,

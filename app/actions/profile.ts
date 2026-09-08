@@ -59,6 +59,7 @@ export async function getProfile() {
     connect,
     ebayConnected: ebay.connected,
     ebaySubscribed: ebay.subscribed,
+    ebayAdmin: ebay.admin,
     ebayMarketplace: ebay.marketplace,
     spent,
     orders: market.orders.length,
