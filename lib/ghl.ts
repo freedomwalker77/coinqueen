@@ -49,10 +49,11 @@ function splitName(name: string) {
 }
 
 function compactUser(user: UserRecord): UserRecord {
-  const { ebayAccessToken: _access, ...rest } = user;
+  const { ebayAccessToken: _access, avatarUrl, ...rest } = user;
   return {
     ...rest,
     email: user.email.toLowerCase(),
+    avatarUrl: avatarUrl?.startsWith("https:") ? avatarUrl : undefined,
   };
 }
 

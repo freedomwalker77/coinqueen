@@ -12,6 +12,7 @@ import {
 } from "@/app/actions/profile";
 import { SignInGate } from "@/components/AccountScreen";
 import { Footer, Header } from "@/components/Chrome";
+import { AvatarDropzone } from "@/components/AvatarDropzone";
 import { formatMoney } from "@/lib/catalog";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -128,10 +129,8 @@ export function ProfileCenter() {
                   }
                 }}
               >
-                <label className="block text-sm text-cream/70">
-                  Photo URL (https, optional)
-                  <input name="avatarUrl" defaultValue={user.avatarUrl} className={field} />
-                </label>
+                <p className="text-sm text-cream/70">Profile photo</p>
+                <AvatarDropzone value={user.avatarUrl} name="avatarUrl" initial={initial} />
                 <label className="block text-sm text-cream/70">
                   Display name
                   <input name="name" defaultValue={user.name} className={field} />

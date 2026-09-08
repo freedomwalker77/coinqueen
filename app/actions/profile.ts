@@ -6,6 +6,7 @@ import { getConnectStatus } from "@/app/actions/connect";
 import { getEbayStatus } from "@/app/actions/ebay";
 import { loadUserMarket, updateUser, deleteUser } from "@/lib/db";
 import { persistGhlAccount } from "@/lib/ghl";
+import { applyReferralToUser } from "@/app/actions/ambassador";
 import { createSession, deleteSession, getSessionUser } from "@/lib/session";
 import { redirect } from "next/navigation";
 
@@ -24,6 +25,7 @@ function publicProfile(user: {
   shipPostal?: string;
   shipCountry?: string;
   inviteCode?: string;
+  referralCode?: string;
   country?: string;
 }) {
   return {
@@ -40,6 +42,7 @@ function publicProfile(user: {
     shipPostal: user.shipPostal ?? "",
     shipCountry: user.shipCountry ?? user.country ?? "",
     inviteCode: user.inviteCode ?? "",
+    referralCode: user.referralCode ?? "",
   };
 }
 
@@ -69,7 +72,14 @@ export async function savePublicProfile(input: { name: string; bio: string; avat
   const name = input.name.trim();
   if (name.length < 2) return { error: "Display name must be at least 2 characters." };
   const avatarUrl = input.avatarUrl.trim();
-  if (avatarUrl && !/^https:\/\//i.test(avatarUrl)) return { error: "Photo URL must start with https://" };
+  if (
+    avatarUrl &&
+    !/^https:\/\//i.test(avatarUrl) &&
+    !/^data:image\/(jpeg|png|webp);base64,/i.test(avatarUrl)
+  ) {
+    return { error: "Use a photo file or an https image URL." };
+  }
+  if (avatarUrl.length > 140000) return { error: "Photo is too large. Try a smaller picture." };
   const saved = updateUser(user.id, {
     name,
     bio: input.bio.trim().slice(0, 500),
@@ -114,6 +124,7 @@ export async function saveInviteCode(code: string) {
   const saved = updateUser(user.id, { inviteCode: code.trim().slice(0, 40) });
   if (!saved) return { error: "Could not save code." };
   await persistGhlAccount(saved);
+  await applyReferralToUser(user.id, saved.inviteCode);
   return { ok: true as const };
 }
 

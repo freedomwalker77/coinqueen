@@ -29,6 +29,9 @@ export type UserRecord = {
   shipPostal?: string;
   shipCountry?: string;
   inviteCode?: string;
+  referralCode?: string;
+  referredBy?: string;
+  referralClicks?: number;
 };
 
 type UsersFile = { users: UserRecord[] };
@@ -72,6 +75,7 @@ export function createUser(input: { name: string; email: string; passwordHash: s
     id,
     shopSlug: slugifyShop(input.name, id),
     createdAt: new Date().toISOString(),
+    referralCode: id.replace(/-/g, "").slice(0, 8).toUpperCase(),
   };
   file.users.push(user);
   writeUsers(file);
@@ -123,6 +127,9 @@ export function updateUser(
       | "shipPostal"
       | "shipCountry"
       | "inviteCode"
+      | "referralCode"
+      | "referredBy"
+      | "referralClicks"
     >
   >,
 ) {
@@ -188,8 +195,26 @@ export function deleteUser(id: string) {
   return true;
 }
 
-export function listPublicUsers() {
+export function findUserByReferralCode(code: string) {
+  const needle = code.trim().toUpperCase();
+  if (!needle) return undefined;
+  return readUsers().users.find((user) => (user.referralCode || "").toUpperCase() === needle);
+}
+
+export function listDirectoryUsers() {
   return readUsers().users.map((user) => ({
+    id: user.id,
+    name: user.name,
+    shopSlug: user.shopSlug,
+    createdAt: user.createdAt,
+    avatarUrl: user.avatarUrl?.startsWith("https:") ? user.avatarUrl : undefined,
+    referralCode: user.referralCode,
+    referredBy: user.referredBy,
+  }));
+}
+
+export function listPublicUsers() {
+  return listDirectoryUsers().map((user) => ({
     id: user.id,
     name: user.name,
     shopSlug: user.shopSlug,

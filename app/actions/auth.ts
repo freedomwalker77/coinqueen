@@ -10,6 +10,8 @@ import {
 import { createUser, findUserByEmail, upsertUser } from "@/lib/db";
 import { loadGhlAccount, persistGhlAccount } from "@/lib/ghl";
 import { createSession, deleteSession } from "@/lib/session";
+import { applyReferralToUser } from "@/app/actions/ambassador";
+import { cookies } from "next/headers";
 
 export async function signup(_state: AuthFormState, formData: FormData): Promise<AuthFormState> {
   const validated = SignupFormSchema.safeParse({
@@ -39,6 +41,8 @@ export async function signup(_state: AuthFormState, formData: FormData): Promise
   if (!user) return { message: created.error };
   await persistGhlAccount(user);
   await createSession(user);
+  const cookieStore = await cookies();
+  await applyReferralToUser(user.id, cookieStore.get("mve_ref")?.value);
   redirect("/collection");
 }
 

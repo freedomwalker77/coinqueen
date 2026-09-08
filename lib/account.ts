@@ -34,5 +34,8 @@ export async function resolvePersistedUser(
     shipPostal: local?.shipPostal || remote?.shipPostal,
     shipCountry: local?.shipCountry || remote?.shipCountry,
     inviteCode: local?.inviteCode || remote?.inviteCode,
+    referralCode: local?.referralCode || remote?.referralCode,
+    referredBy: local?.referredBy || remote?.referredBy,
+    referralClicks: local?.referralClicks ?? remote?.referralClicks,
   });
 }

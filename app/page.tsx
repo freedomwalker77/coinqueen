@@ -4,8 +4,15 @@ import { MarketGrid } from "@/components/MarketGrid";
 import { CATEGORIES, catalog, featuredItems, formatMoney, recentSales } from "@/lib/catalog";
 import { soldVenue } from "@/lib/comps";
 import Link from "next/link";
+import { redirect } from "next/navigation";
 
-export default function HomePage() {
+export default async function HomePage({
+  searchParams,
+}: {
+  searchParams: Promise<{ ref?: string }>;
+}) {
+  const params = await searchParams;
+  if (params.ref?.trim()) redirect(`/r/${params.ref.trim()}`);
   const featured = featuredItems();
   const sales = recentSales();
 
