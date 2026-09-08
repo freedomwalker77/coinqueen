@@ -51,7 +51,7 @@ export function useMarket() {
         const merged = await loadAccountMarket(local);
         if (cancelled) return;
         let next = merged ?? local;
-        if (!localStorage.getItem("myvaultexchange-cleared-posted-v1")) {
+        if (!localStorage.getItem("myvaultexchange-cleared-posted-v2")) {
           next = {
             ...next,
             listings: next.listings.filter(
@@ -61,7 +61,7 @@ export function useMarket() {
               next.listings.some((row) => row.id === id) || id.startsWith("seed-"),
             ),
           };
-          localStorage.setItem("myvaultexchange-cleared-posted-v1", "1");
+          localStorage.setItem("myvaultexchange-cleared-posted-v2", "1");
         }
         persist(next);
         setState(next);
