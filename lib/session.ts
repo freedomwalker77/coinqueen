@@ -47,12 +47,13 @@ function sessionCookieDomain() {
   return undefined;
 }
 
-export async function createSession(user: { id: string; name: string; shopSlug: string }) {
+export async function createSession(user: { id: string; name: string; shopSlug: string; email?: string }) {
   const expiresAt = Date.now() + 7 * 24 * 60 * 60 * 1000;
   const session = await encrypt({
     userId: user.id,
     name: user.name,
     shopSlug: user.shopSlug,
+    email: user.email?.toLowerCase(),
     expiresAt,
   });
   const cookieStore = await cookies();
@@ -82,9 +83,14 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   const payload = await decrypt(token);
   if (!payload?.userId) return null;
   const user = findUserById(payload.userId);
-  if (user) return { id: user.id, name: user.name, shopSlug: user.shopSlug };
+  if (user) return { id: user.id, name: user.name, shopSlug: user.shopSlug, email: user.email };
   if (payload.name && payload.shopSlug) {
-    return { id: payload.userId, name: payload.name, shopSlug: payload.shopSlug };
+    return {
+      id: payload.userId,
+      name: payload.name,
+      shopSlug: payload.shopSlug,
+      email: payload.email,
+    };
   }
   return null;
 }

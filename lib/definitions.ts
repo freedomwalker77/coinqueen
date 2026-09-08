@@ -30,6 +30,7 @@ export type SessionPayload = {
   userId: string;
   name?: string;
   shopSlug?: string;
+  email?: string;
   expiresAt: number;
 };
 
@@ -37,6 +38,7 @@ export type SessionUser = {
   id: string;
   name: string;
   shopSlug: string;
+  email?: string;
 };
 
 export type ConnectStatus = {

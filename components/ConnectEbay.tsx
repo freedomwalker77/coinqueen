@@ -4,20 +4,23 @@ export function ConnectEbay({
   configured,
   connected,
   status,
+  reason,
 }: {
   configured: boolean;
   connected: boolean;
   status?: string;
+  reason?: string;
 }) {
   const message =
     status === "connected"
       ? "eBay account connected. New listings can go to eBay too."
       : status === "denied"
-        ? "eBay sign-in was cancelled."
+        ? reason || "eBay sign-in was cancelled."
         : status === "need_runame"
           ? "Add EBAY_RUNAME in env (the RuName from eBay Developer, not the https URL), then try again."
           : status === "error"
-            ? "eBay did not finish connecting. Check RuName, sell.inventory / sell.account scopes, and that this site is the accepted return URL."
+            ? reason ||
+              "eBay did not finish connecting. Log out, log in, then try again. If it still fails, enable sell.inventory and sell.account on this RuName."
             : null;
 
   return (

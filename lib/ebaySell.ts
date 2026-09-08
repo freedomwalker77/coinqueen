@@ -57,10 +57,9 @@ export function ebayAuthorizeUrl(state: string) {
     client_id: id,
     response_type: "code",
     redirect_uri: ruName,
-    scope: SELL_SCOPES,
     state,
   });
-  return `${ebayAuthHost()}/oauth2/authorize?${params.toString()}`;
+  return `${ebayAuthHost()}/oauth2/authorize?${params.toString()}&scope=${encodeURIComponent(SELL_SCOPES)}`;
 }
 
 async function tokenRequest(body: string) {

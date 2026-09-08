@@ -11,7 +11,7 @@ import { Suspense } from "react";
 export default async function SellPage({
   searchParams,
 }: {
-  searchParams: Promise<{ connect?: string; ebay?: string }>;
+  searchParams: Promise<{ connect?: string; ebay?: string; reason?: string }>;
 }) {
   const user = await getSessionUser();
   const params = await searchParams;
@@ -46,6 +46,7 @@ export default async function SellPage({
                   configured={ebayStatus.configured}
                   connected={ebayStatus.connected}
                   status={params.ebay}
+                  reason={params.reason}
                 />
               ) : null}
               <Suspense fallback={<p className="text-cream/50">Loading form…</p>}>

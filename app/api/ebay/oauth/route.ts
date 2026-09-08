@@ -1,8 +1,16 @@
 import { NextResponse } from "next/server";
-import { findUserById, updateUser } from "@/lib/db";
+import { resolvePersistedUser } from "@/lib/account";
+import { updateUser } from "@/lib/db";
 import { persistGhlAccount } from "@/lib/ghl";
 import { exchangeEbayAuthCode } from "@/lib/ebaySell";
 import { getSessionUser } from "@/lib/session";
+
+function sellRedirect(origin: string, ebay: string, reason?: string) {
+  const url = new URL("/sell", origin);
+  url.searchParams.set("ebay", ebay);
+  if (reason) url.searchParams.set("reason", reason.slice(0, 180));
+  return NextResponse.redirect(url);
+}
 
 export async function GET(request: Request) {
   const url = new URL(request.url);
@@ -19,17 +27,25 @@ export async function GET(request: Request) {
 
   const origin = process.env.NEXT_PUBLIC_APP_URL || url.origin;
   if (error) {
-    return NextResponse.redirect(`${origin}/sell?ebay=denied`);
+    return sellRedirect(origin, "denied", url.searchParams.get("error_description") || error);
   }
 
   const session = await getSessionUser();
-  if (!session) return NextResponse.redirect(`${origin}/login`);
-  const user = findUserById(session.id);
-  if (!user) return NextResponse.redirect(`${origin}/sell?ebay=error`);
+  if (!session) return NextResponse.redirect(new URL("/login", origin));
+  const user = await resolvePersistedUser(session);
+  if (!user) {
+    return sellRedirect(
+      origin,
+      "error",
+      session.email
+        ? "Could not load your MyVaultExchange account after eBay returned."
+        : "Log out, log in once, then click Sign in with eBay again.",
+    );
+  }
 
   const token = await exchangeEbayAuthCode(code!);
   if ("error" in token) {
-    return NextResponse.redirect(`${origin}/sell?ebay=error`);
+    return sellRedirect(origin, "error", token.error);
   }
 
   const saved = updateUser(user.id, {
@@ -38,5 +54,5 @@ export async function GET(request: Request) {
     ebayTokenExpires: token.expires,
   });
   if (saved) void persistGhlAccount(saved);
-  return NextResponse.redirect(`${origin}/sell?ebay=connected`);
+  return sellRedirect(origin, "connected");
 }
