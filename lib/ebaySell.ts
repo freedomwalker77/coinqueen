@@ -120,12 +120,11 @@ async function ebayFetch(token: string, path: string, init?: RequestInit) {
   const headers: Record<string, string> = {
     Authorization: `Bearer ${token}`,
     Accept: "application/json",
-    "Accept-Language": "en-US",
-    "Content-Language": "en-US",
     "X-EBAY-C-MARKETPLACE-ID": ebayMarketplace(),
   };
   if (body) {
     headers["Content-Type"] = "application/json";
+    headers["Content-Language"] = "en-US";
     headers["Content-Length"] = String(Buffer.byteLength(body));
   }
 
@@ -248,7 +247,7 @@ export async function publishToEbay(input: {
   });
   if (!itemRes.ok) {
     const text = await itemRes.text();
-    return { error: `eBay inventory failed (${itemRes.status}): ${text.slice(0, 240)}` as const };
+    return { error: `eBay could not save the item (${itemRes.status}): ${text.slice(0, 240)}` as const };
   }
 
   const offerRes = await ebayFetch(token, "/sell/inventory/v1/offer", {
