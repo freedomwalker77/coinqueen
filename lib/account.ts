@@ -24,5 +24,6 @@ export async function resolvePersistedUser(
     ebayRefreshToken: local?.ebayRefreshToken || remote?.ebayRefreshToken,
     ebayAccessToken: local?.ebayAccessToken || remote?.ebayAccessToken,
     ebayTokenExpires: local?.ebayTokenExpires ?? remote?.ebayTokenExpires,
+    ebayMarketplace: local?.ebayMarketplace || remote?.ebayMarketplace,
   });
 }

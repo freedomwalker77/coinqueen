@@ -1,8 +1,11 @@
 "use server";
 
 import { resolvePersistedUser } from "@/lib/account";
-import { ebaySellConfigured, publishToEbay } from "@/lib/ebaySell";
+import { EBAY_SELL_SITES, isEbaySellSite } from "@/lib/ebayMarketplaces";
+import { defaultEbayMarketplace, ebaySellConfigured, publishToEbay } from "@/lib/ebaySell";
 import { getItem } from "@/lib/catalog";
+import { updateUser } from "@/lib/db";
+import { persistGhlAccount } from "@/lib/ghl";
 import { getSessionUser } from "@/lib/session";
 
 export async function getEbayStatus() {
@@ -11,7 +14,23 @@ export async function getEbayStatus() {
   return {
     configured: ebaySellConfigured(),
     connected: Boolean(user?.ebayRefreshToken),
+    marketplace:
+      user?.ebayMarketplace && isEbaySellSite(user.ebayMarketplace)
+        ? user.ebayMarketplace
+        : defaultEbayMarketplace(),
+    sites: EBAY_SELL_SITES.map((site) => ({ id: site.id, label: site.label })),
   };
+}
+
+export async function saveEbayMarketplace(marketplace: string) {
+  const session = await getSessionUser();
+  if (!session) return { error: "Sign in first." as const };
+  if (!isEbaySellSite(marketplace)) return { error: "Unknown eBay site." as const };
+  const user = await resolvePersistedUser(session, { skipRemoteIfEbay: true });
+  if (!user) return { error: "Account not found. Log out and log in, then try again." as const };
+  const saved = updateUser(user.id, { ebayMarketplace: marketplace });
+  if (saved) void persistGhlAccount(saved);
+  return { marketplace };
 }
 
 export async function listOnEbay(input: {
@@ -21,6 +40,7 @@ export async function listOnEbay(input: {
   price: number;
   note?: string;
   imageUrl: string;
+  marketplace?: string;
 }): Promise<{ url?: string; error?: string }> {
   const session = await getSessionUser();
   if (!session) return { error: "Sign in first." };
@@ -38,5 +58,6 @@ export async function listOnEbay(input: {
     price: input.price,
     note: input.note,
     imageUrl: input.imageUrl,
+    marketplace: input.marketplace,
   });
 }

@@ -1,13 +1,20 @@
+"use client";
+
+import { saveEbayMarketplace } from "@/app/actions/ebay";
 import Link from "next/link";
 
 export function ConnectEbay({
   configured,
   connected,
+  marketplace,
+  sites,
   status,
   reason,
 }: {
   configured: boolean;
   connected: boolean;
+  marketplace: string;
+  sites: Array<{ id: string; label: string }>;
   status?: string;
   reason?: string;
 }) {
@@ -30,16 +37,11 @@ export function ConnectEbay({
     <div className="mb-8 rounded-2xl border border-money/20 bg-queen-deep p-5">
       <h2 className="font-serif text-2xl text-money">List on eBay</h2>
       <p className="mt-2 text-sm text-cream/60">
-        Same idea as CardPriceKing: publish here, and optionally push a fixed-price listing to your eBay
-        seller account. You still need an eBay seller account with Payment, Return, and Shipping policies,
-        plus a business location in Seller Hub.
+        Publish here, then optionally push a fixed-price listing to the eBay site you sell from. Worldwide
+        buyers are a Shipping policy setting on that site, not a second eBay.com listing.
       </p>
       {message ? (
-        <p
-          className={`mt-3 text-sm ${connected ? "text-money" : "text-red-700"}`}
-        >
-          {message}
-        </p>
+        <p className={`mt-3 text-sm ${connected ? "text-money" : "text-red-700"}`}>{message}</p>
       ) : null}
       {!configured ? (
         <p className="mt-3 text-sm text-cream/50">
@@ -47,7 +49,22 @@ export function ConnectEbay({
           user token.
         </p>
       ) : connected ? (
-        <p className="mt-3 text-sm text-money">Connected. The Also list on eBay checkbox is on the form below.</p>
+        <label className="mt-4 block text-sm text-cream/70">
+          Your eBay site
+          <select
+            defaultValue={marketplace}
+            onChange={(event) => {
+              void saveEbayMarketplace(event.target.value);
+            }}
+            className="mt-1 w-full max-w-md rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
+          >
+            {sites.map((site) => (
+              <option key={site.id} value={site.id}>
+                {site.label}
+              </option>
+            ))}
+          </select>
+        </label>
       ) : (
         <Link
           href="/api/ebay/connect"

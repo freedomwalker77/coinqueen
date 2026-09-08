@@ -19,6 +19,7 @@ export type UserRecord = {
   ebayRefreshToken?: string;
   ebayAccessToken?: string;
   ebayTokenExpires?: number;
+  ebayMarketplace?: string;
 };
 
 type UsersFile = { users: UserRecord[] };
@@ -101,6 +102,7 @@ export function updateUser(
       | "ebayRefreshToken"
       | "ebayAccessToken"
       | "ebayTokenExpires"
+      | "ebayMarketplace"
     >
   >,
 ) {

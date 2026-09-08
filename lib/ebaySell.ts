@@ -4,6 +4,7 @@ import type { CatalogItem } from "./catalog";
 import type { UserRecord } from "./db";
 import { updateUser } from "./db";
 import { persistGhlAccount } from "./ghl";
+import { EBAY_SELL_SITES, ebaySellSite, isEbaySellSite } from "./ebayMarketplaces";
 
 const SELL_SCOPES = [
   "https://api.ebay.com/oauth/api_scope",
@@ -26,9 +27,9 @@ function ebayAuthHost() {
   return ebaySandbox() ? "https://auth.sandbox.ebay.com" : "https://auth.ebay.com";
 }
 
-function ebayMarketplace() {
+export function defaultEbayMarketplace() {
   const raw = (process.env.EBAY_MARKETPLACE || "EBAY_CA").toUpperCase();
-  return raw.startsWith("EBAY_") ? raw : "EBAY_CA";
+  return isEbaySellSite(raw) ? raw : "EBAY_CA";
 }
 
 function ebayClient() {
@@ -119,8 +120,8 @@ async function ebayFetch(
   init?: RequestInit & { marketplace?: string; locale?: string },
 ) {
   const { marketplace: marketplaceOverride, locale: localeOverride, ...rest } = init ?? {};
-  const marketplace = marketplaceOverride ?? ebayMarketplace();
-  const locale = localeOverride ?? (marketplace === "EBAY_CA" ? "en-CA" : "en-US");
+  const marketplace = marketplaceOverride ?? defaultEbayMarketplace();
+  const locale = localeOverride ?? ebaySellSite(marketplace).locale;
   const headers = new Headers();
   headers.set("Authorization", `Bearer ${token}`);
   headers.set("Accept", "application/json");
@@ -196,6 +197,23 @@ async function firstLocationKey(token: string, marketplace: string) {
   return enabled?.merchantLocationKey ?? null;
 }
 
+async function rememberMarketplace(user: UserRecord, marketplace: string) {
+  if (user.ebayMarketplace === marketplace) return;
+  const saved = updateUser(user.id, { ebayMarketplace: marketplace });
+  if (saved) void persistGhlAccount(saved);
+}
+
+async function marketplaceWithPolicies(token: string, preferred: string) {
+  const order = [preferred, ...EBAY_SELL_SITES.map((site) => site.id)].filter(
+    (id, index, all) => isEbaySellSite(id) && all.indexOf(id) === index,
+  );
+  for (const marketplace of order) {
+    const policies = await policiesFor(token, marketplace);
+    if (policies) return { marketplace, policies };
+  }
+  return null;
+}
+
 export async function publishToEbay(input: {
   user: UserRecord;
   sku: string;
@@ -204,6 +222,7 @@ export async function publishToEbay(input: {
   price: number;
   note?: string;
   imageUrl: string;
+  marketplace?: string;
 }) {
   try {
     return await publishToEbayInner(input);
@@ -221,6 +240,7 @@ async function publishToEbayInner(input: {
   price: number;
   note?: string;
   imageUrl: string;
+  marketplace?: string;
 }) {
   const token = await userAccessToken(input.user);
   if (typeof token !== "string") return token;
@@ -233,11 +253,24 @@ async function publishToEbayInner(input: {
     return { error: "eBay needs a public https photo URL." as const };
   }
 
-  const preferred = ebayMarketplace();
-  const marketplaces = preferred === "EBAY_CA" ? ["EBAY_CA", "EBAY_US"] : [preferred, "EBAY_CA", "EBAY_US"];
-  const uniqueMarketplaces = [...new Set(marketplaces)];
+  const preferred =
+    (isEbaySellSite(input.marketplace ?? "") && input.marketplace) ||
+    (isEbaySellSite(input.user.ebayMarketplace) && input.user.ebayMarketplace) ||
+    defaultEbayMarketplace();
+  const chosen = await marketplaceWithPolicies(token, preferred);
 
-  const errors: string[] = [];
+  if (!chosen) {
+    const site = ebaySellSite(preferred);
+    return {
+      error: `${site.label} is missing a Payment, Return, or Shipping policy in Seller Hub. Pick the eBay site you sell from, and put worldwide shipping in that site's Shipping policy.`,
+    };
+  }
+
+  const marketplace = chosen.marketplace;
+  const policies = chosen.policies;
+  const site = ebaySellSite(marketplace);
+  await rememberMarketplace(input.user, marketplace);
+
   const sku = `mve${Date.now()}`.slice(0, 50);
   const title = `${input.item.shortName} ${input.grade}`.slice(0, 80);
   const description = [input.item.description, input.note, `Grade: ${input.grade}`, "Listed from MyVaultExchange."]
@@ -245,81 +278,68 @@ async function publishToEbayInner(input: {
     .join("\n\n")
     .slice(0, 4000);
 
-  for (const marketplace of uniqueMarketplaces) {
-    const policies = await policiesFor(token, marketplace);
-    if (!policies) {
-      errors.push(`${marketplace}: missing Payment, Return, or Shipping policies in Seller Hub`);
-      continue;
-    }
-    const locationKey = await firstLocationKey(token, marketplace);
-    if (!locationKey) {
-      errors.push(`${marketplace}: no inventory location. Add a business location in Seller Hub`);
-      continue;
-    }
-
-    const itemRes = await ebayFetch(token, `/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`, {
-      method: "PUT",
-      marketplace,
-      body: JSON.stringify({
-        availability: { shipToLocationAvailability: { quantity: 1 } },
-        condition: "USED_EXCELLENT",
-        product: {
-          title,
-          description,
-          imageUrls: [image],
-        },
-      }),
-    });
-    if (!itemRes.ok) {
-      const text = await itemRes.text();
-      errors.push(`${marketplace}: could not save item (${itemRes.status}): ${text.slice(0, 160)}`);
-      continue;
-    }
-
-    const currency = marketplace === "EBAY_CA" ? "CAD" : "USD";
-    const offerRes = await ebayFetch(token, "/sell/inventory/v1/offer", {
-      method: "POST",
-      marketplace,
-      body: JSON.stringify({
-        sku,
-        marketplaceId: marketplace,
-        format: "FIXED_PRICE",
-        availableQuantity: 1,
-        categoryId: categoryId(input.item),
-        listingDescription: description,
-        listingPolicies: policies,
-        merchantLocationKey: locationKey,
-        pricingSummary: {
-          price: { value: input.price.toFixed(2), currency },
-        },
-      }),
-    });
-    const offerJson = (await offerRes.json()) as { offerId?: string; errors?: Array<{ message?: string }> };
-    if (!offerRes.ok || !offerJson.offerId) {
-      errors.push(
-        offerJson.errors?.map((row) => row.message).filter(Boolean).join("; ") ||
-          `eBay offer failed on ${marketplace} (${offerRes.status})`,
-      );
-      continue;
-    }
-
-    const pubRes = await ebayFetch(token, `/sell/inventory/v1/offer/${offerJson.offerId}/publish`, {
-      method: "POST",
-      marketplace,
-      body: "{}",
-    });
-    const pubJson = (await pubRes.json()) as { listingId?: string; errors?: Array<{ message?: string }> };
-    if (!pubRes.ok || !pubJson.listingId) {
-      errors.push(
-        pubJson.errors?.map((row) => row.message).filter(Boolean).join("; ") ||
-          `eBay publish failed on ${marketplace} (${pubRes.status})`,
-      );
-      continue;
-    }
-
-    const host = marketplace === "EBAY_CA" ? "https://www.ebay.ca" : "https://www.ebay.com";
-    return { url: `${host}/itm/${pubJson.listingId}` };
+  const locationKey = await firstLocationKey(token, marketplace);
+  if (!locationKey) {
+    return { error: `No eBay inventory location for ${site.label}. Add a business location in Seller Hub.` };
   }
 
-  return { error: errors.join(" | ") || "eBay could not create an offer on eBay.ca or eBay.com." };
+  const itemRes = await ebayFetch(token, `/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`, {
+    method: "PUT",
+    marketplace,
+    body: JSON.stringify({
+      availability: { shipToLocationAvailability: { quantity: 1 } },
+      condition: "USED_EXCELLENT",
+      product: {
+        title,
+        description,
+        imageUrls: [image],
+      },
+    }),
+  });
+  if (!itemRes.ok) {
+    const text = await itemRes.text();
+    return { error: `eBay could not save the item (${itemRes.status}): ${text.slice(0, 200)}` };
+  }
+
+  const offerRes = await ebayFetch(token, "/sell/inventory/v1/offer", {
+    method: "POST",
+    marketplace,
+    body: JSON.stringify({
+      sku,
+      marketplaceId: marketplace,
+      format: "FIXED_PRICE",
+      availableQuantity: 1,
+      categoryId: categoryId(input.item),
+      listingDescription: description,
+      listingPolicies: policies,
+      merchantLocationKey: locationKey,
+      pricingSummary: {
+        price: { value: input.price.toFixed(2), currency: site.currency },
+      },
+    }),
+  });
+  const offerJson = (await offerRes.json()) as { offerId?: string; errors?: Array<{ message?: string }> };
+  if (!offerRes.ok || !offerJson.offerId) {
+    return {
+      error:
+        offerJson.errors?.map((row) => row.message).filter(Boolean).join("; ") ||
+        `eBay offer failed (${offerRes.status})`,
+    };
+  }
+
+  const pubRes = await ebayFetch(token, `/sell/inventory/v1/offer/${offerJson.offerId}/publish`, {
+    method: "POST",
+    marketplace,
+    body: "{}",
+  });
+  const pubJson = (await pubRes.json()) as { listingId?: string; errors?: Array<{ message?: string }> };
+  if (!pubRes.ok || !pubJson.listingId) {
+    return {
+      error:
+        pubJson.errors?.map((row) => row.message).filter(Boolean).join("; ") ||
+        `eBay publish failed (${pubRes.status})`,
+    };
+  }
+
+  return { url: `${site.host}/itm/${pubJson.listingId}` };
 }

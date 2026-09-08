@@ -47,6 +47,8 @@ export default async function SellPage({
                 <ConnectEbay
                   configured={ebayStatus.configured}
                   connected={ebayStatus.connected}
+                  marketplace={ebayStatus.marketplace}
+                  sites={ebayStatus.sites}
                   status={params.ebay}
                   reason={params.reason}
                 />

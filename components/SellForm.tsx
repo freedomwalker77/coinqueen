@@ -178,7 +178,7 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
       </button>
       <p className="text-sm text-cream/45">
         {ready && account
-          ? `Publishes to ${shopSlug}. eBay uses your Seller Hub policies and location.`
+          ? `Publishes to ${shopSlug}. eBay lists on your chosen site; worldwide shipping is in that site's Shipping policy.`
           : "Sign in to publish into your account shop."}
       </p>
     </form>
