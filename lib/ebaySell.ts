@@ -32,7 +32,7 @@ function ebayMarketplace() {
 }
 
 function contentLanguage() {
-  return ebayMarketplace() === "EBAY_CA" ? "en-CA" : "en-US";
+  return "en-US";
 }
 
 function ebayClient() {
@@ -122,8 +122,10 @@ async function ebayFetch(token: string, path: string, init?: RequestInit) {
     headers: {
       Authorization: `Bearer ${token}`,
       "Content-Type": "application/json",
-      "Content-Language": contentLanguage(),
       Accept: "application/json",
+      "Accept-Language": contentLanguage(),
+      "Content-Language": contentLanguage(),
+      "X-EBAY-C-MARKETPLACE-ID": ebayMarketplace(),
       ...init?.headers,
     },
     cache: "no-store",
