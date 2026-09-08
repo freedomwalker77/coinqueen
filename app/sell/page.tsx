@@ -1,5 +1,7 @@
 import { getConnectStatus } from "@/app/actions/connect";
+import { getEbayStatus } from "@/app/actions/ebay";
 import { Footer, Header } from "@/components/Chrome";
+import { ConnectEbay } from "@/components/ConnectEbay";
 import { ConnectPayouts } from "@/components/ConnectPayouts";
 import { SellForm } from "@/components/SellForm";
 import { getSessionUser } from "@/lib/session";
@@ -9,11 +11,13 @@ import { Suspense } from "react";
 export default async function SellPage({
   searchParams,
 }: {
-  searchParams: Promise<{ connect?: string }>;
+  searchParams: Promise<{ connect?: string; ebay?: string }>;
 }) {
   const user = await getSessionUser();
-  const connect = (await searchParams).connect;
+  const params = await searchParams;
+  const connect = params.connect;
   const connectStatus = user ? await getConnectStatus() : null;
+  const ebayStatus = user ? await getEbayStatus() : null;
 
   return (
     <div className="flex min-h-full flex-col">
@@ -22,7 +26,8 @@ export default async function SellPage({
         <p className="text-xs uppercase tracking-[0.22em] text-money">Sell</p>
         <h1 className="mt-2 font-serif text-4xl text-money">Open a listing</h1>
         <p className="mt-2 max-w-2xl text-cream/60">
-          Scan first if you need an ID, then publish a buy-now or auction into your shop.
+          Scan first if you need an ID, then publish a buy-now or auction into your shop. Optionally push the
+          same lot to eBay.
         </p>
         <div className="mt-8">
           {user ? (
@@ -36,8 +41,15 @@ export default async function SellPage({
                   again.
                 </p>
               ) : null}
+              {ebayStatus ? (
+                <ConnectEbay
+                  configured={ebayStatus.configured}
+                  connected={ebayStatus.connected}
+                  status={params.ebay}
+                />
+              ) : null}
               <Suspense fallback={<p className="text-cream/50">Loading form…</p>}>
-                <SellForm />
+                <SellForm ebayConnected={ebayStatus?.connected ?? false} />
               </Suspense>
             </>
           ) : (

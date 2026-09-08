@@ -16,6 +16,9 @@ export type UserRecord = {
   stripeChargesEnabled?: boolean;
   stripePayoutsEnabled?: boolean;
   country?: string;
+  ebayRefreshToken?: string;
+  ebayAccessToken?: string;
+  ebayTokenExpires?: number;
 };
 
 type UsersFile = { users: UserRecord[] };
@@ -89,7 +92,16 @@ export function findUserByShopSlug(slug: string) {
 export function updateUser(
   id: string,
   patch: Partial<
-    Pick<UserRecord, "stripeAccountId" | "stripeChargesEnabled" | "stripePayoutsEnabled" | "country">
+    Pick<
+      UserRecord,
+      | "stripeAccountId"
+      | "stripeChargesEnabled"
+      | "stripePayoutsEnabled"
+      | "country"
+      | "ebayRefreshToken"
+      | "ebayAccessToken"
+      | "ebayTokenExpires"
+    >
   >,
 ) {
   const file = readUsers();

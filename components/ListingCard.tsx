@@ -37,6 +37,11 @@ export function ListingCard({ listing }: { listing: Listing }) {
           </Link>
         ) : null}
         <p className="line-clamp-3 text-sm text-cream/60">{listing.note || packed.item.description}</p>
+        {listing.ebayUrl ? (
+          <a href={listing.ebayUrl} className="text-sm text-gold hover:underline" target="_blank" rel="noreferrer">
+            View on eBay
+          </a>
+        ) : null}
         <p className="text-xs text-cream/45">
           {listing.kind === "auction" ? "Auction" : "Buy now"} · {listing.grade}
           {listing.createdAt

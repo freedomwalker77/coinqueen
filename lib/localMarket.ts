@@ -105,11 +105,13 @@ export function useMarket() {
     kind: ListingKind;
     note?: string;
     days?: number;
+    ebayUrl?: string;
+    id?: string;
   }) {
     const ends = new Date();
     ends.setDate(ends.getDate() + (input.days ?? 3));
     const listing: Listing = {
-      id: `user-${Date.now()}`,
+      id: input.id ?? `user-${Date.now()}`,
       catalogId: input.catalogId,
       shopSlug,
       grade: input.grade,
@@ -118,6 +120,7 @@ export function useMarket() {
       endsAt: input.kind === "auction" ? ends.toISOString() : undefined,
       bids: 0,
       note: input.note,
+      ebayUrl: input.ebayUrl,
       createdAt: new Date().toISOString(),
       seed: false,
     };

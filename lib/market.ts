@@ -20,6 +20,7 @@ export type Listing = {
   endsAt?: string;
   bids: number;
   note?: string;
+  ebayUrl?: string;
   createdAt: string;
   seed: boolean;
 };

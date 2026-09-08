@@ -1,12 +1,13 @@
 "use client";
 
+import { listOnEbay } from "@/app/actions/ebay";
 import { useRouter, useSearchParams } from "next/navigation";
 import { useEffect, useMemo, useState } from "react";
 import { catalog, formatMoney, getItem } from "@/lib/catalog";
 import { useMarket } from "@/lib/localMarket";
 import type { ListingKind } from "@/lib/market";
 
-export function SellForm() {
+export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean }) {
   const params = useSearchParams();
   const router = useRouter();
   const preset = params.get("item") ?? catalog[0]?.id ?? "";
@@ -16,6 +17,10 @@ export function SellForm() {
   const [price, setPrice] = useState("");
   const [kind, setKind] = useState<ListingKind>("buy_now");
   const [note, setNote] = useState("");
+  const [photoUrl, setPhotoUrl] = useState("");
+  const [alsoEbay, setAlsoEbay] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const item = useMemo(() => getItem(catalogId), [catalogId]);
 
   useEffect(() => {
@@ -29,12 +34,44 @@ export function SellForm() {
   return (
     <form
       className="max-w-xl space-y-4"
-      onSubmit={(event) => {
+      onSubmit={async (event) => {
         event.preventDefault();
         const amount = Number(price);
         if (!catalogId || !Number.isFinite(amount) || amount <= 0) return;
-        const listing = publishListing({ catalogId, grade, price: amount, kind, note });
-        router.push(`/shop/${listing.shopSlug}?listed=${listing.id}`);
+        if (alsoEbay && !/^https:\/\//i.test(photoUrl.trim())) {
+          setError("eBay needs a public https photo URL.");
+          return;
+        }
+        setBusy(true);
+        setError(null);
+        const listingId = `user-${Date.now()}`;
+        let ebayUrl: string | undefined;
+        let ebayError: string | undefined;
+        if (alsoEbay) {
+          const result = await listOnEbay({
+            listingId,
+            catalogId,
+            grade,
+            price: amount,
+            note,
+            imageUrl: photoUrl,
+          });
+          if (result.error) ebayError = result.error;
+          else ebayUrl = result.url;
+        }
+        const listing = publishListing({
+          id: listingId,
+          catalogId,
+          grade,
+          price: amount,
+          kind,
+          note,
+          ebayUrl,
+        });
+        const qs = new URLSearchParams({ listed: listing.id });
+        if (ebayUrl) qs.set("ebay", ebayUrl);
+        if (ebayError) qs.set("ebay_error", ebayError);
+        router.push(`/shop/${listing.shopSlug}?${qs.toString()}`);
       }}
     >
       <label className="block text-sm text-cream/70">
@@ -97,15 +134,38 @@ export function SellForm() {
           placeholder="Original surfaces, light hairlines, original envelope…"
         />
       </label>
+      <label className="block text-sm text-cream/70">
+        Photo URL (https) — required for eBay
+        <input
+          value={photoUrl}
+          onChange={(event) => setPhotoUrl(event.target.value)}
+          className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
+          placeholder="https://…"
+        />
+      </label>
+      <label className="flex items-center gap-2 text-sm text-cream/80">
+        <input
+          type="checkbox"
+          checked={alsoEbay}
+          disabled={!ebayConnected}
+          onChange={(event) => setAlsoEbay(event.target.checked)}
+        />
+        Also list on eBay (fixed price)
+      </label>
+      {!ebayConnected ? (
+        <p className="text-sm text-cream/45">Sign in with eBay above to enable cross-posting.</p>
+      ) : null}
+      {error ? <p className="text-sm text-red-700">{error}</p> : null}
       <button
         type="submit"
-        className="rounded-full bg-gold px-6 py-3 font-medium text-queen-ink hover:bg-gold-bright"
+        disabled={busy}
+        className="rounded-full bg-gold px-6 py-3 font-medium text-queen-ink hover:bg-gold-bright disabled:opacity-60"
       >
-        Publish listing
+        {busy ? "Publishing…" : alsoEbay ? "Publish here and on eBay" : "Publish listing"}
       </button>
       <p className="text-sm text-cream/45">
         {ready && account
-          ? `Publishes to ${shopSlug}. Stripe payouts are not wired yet.`
+          ? `Publishes to ${shopSlug}. eBay uses your Seller Hub policies and location.`
           : "Sign in to publish into your account shop."}
       </p>
     </form>

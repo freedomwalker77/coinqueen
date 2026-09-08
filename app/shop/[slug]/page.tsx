@@ -4,15 +4,28 @@ import { findUserByShopSlug } from "@/lib/db";
 import { getShop, shopFromAccount } from "@/lib/market";
 import { notFound } from "next/navigation";
 
+function safeEbayListingUrl(raw?: string) {
+  if (!raw) return null;
+  try {
+    const url = new URL(raw);
+    if (url.protocol !== "https:") return null;
+    if (!/(^|\.)ebay\.(com|ca)$/i.test(url.hostname)) return null;
+    return url.toString();
+  } catch {
+    return null;
+  }
+}
+
 export default async function ShopPage({
   params,
   searchParams,
 }: {
   params: Promise<{ slug: string }>;
-  searchParams: Promise<{ listed?: string }>;
+  searchParams: Promise<{ listed?: string; ebay?: string; ebay_error?: string }>;
 }) {
   const { slug } = await params;
-  const { listed } = await searchParams;
+  const { listed, ebay, ebay_error: ebayError } = await searchParams;
+  const ebayUrl = safeEbayListingUrl(ebay);
   const owner = findUserByShopSlug(slug);
   const shop = owner ? shopFromAccount(owner.name, owner.shopSlug) : getShop(slug);
   if (!shop) notFound();
@@ -30,6 +43,17 @@ export default async function ShopPage({
         {listed ? (
           <p className="mt-6 rounded-2xl border border-gold/30 bg-queen-deep px-4 py-3 text-sm text-cream">
             Listing published to your account shop.
+            {ebayUrl ? (
+              <>
+                {" "}
+                Also live on{" "}
+                <a href={ebayUrl} className="text-gold underline" target="_blank" rel="noreferrer">
+                  eBay
+                </a>
+                .
+              </>
+            ) : null}
+            {ebayError ? <> eBay did not publish: {ebayError.slice(0, 280)}</> : null}
           </p>
         ) : null}
         <div className="mt-10">

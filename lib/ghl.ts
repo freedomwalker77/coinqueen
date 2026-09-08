@@ -47,13 +47,10 @@ function splitName(name: string) {
 }
 
 function compactUser(user: UserRecord): UserRecord {
+  const { ebayAccessToken: _access, ...rest } = user;
   return {
-    id: user.id,
-    name: user.name,
+    ...rest,
     email: user.email.toLowerCase(),
-    passwordHash: user.passwordHash,
-    shopSlug: user.shopSlug,
-    createdAt: user.createdAt,
   };
 }
 
