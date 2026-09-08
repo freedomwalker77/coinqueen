@@ -8,6 +8,8 @@ import { getSessionUser } from "@/lib/session";
 import Link from "next/link";
 import { Suspense } from "react";
 
+export const maxDuration = 60;
+
 export default async function SellPage({
   searchParams,
 }: {

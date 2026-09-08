@@ -5,8 +5,6 @@ import { ebaySellConfigured, publishToEbay } from "@/lib/ebaySell";
 import { getItem } from "@/lib/catalog";
 import { getSessionUser } from "@/lib/session";
 
-export const maxDuration = 60;
-
 export async function getEbayStatus() {
   const session = await getSessionUser();
   const user = session ? await resolvePersistedUser(session) : null;
