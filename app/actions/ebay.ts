@@ -5,6 +5,8 @@ import { ebaySellConfigured, publishToEbay } from "@/lib/ebaySell";
 import { getItem } from "@/lib/catalog";
 import { getSessionUser } from "@/lib/session";
 
+export const maxDuration = 60;
+
 export async function getEbayStatus() {
   const session = await getSessionUser();
   const user = session ? await resolvePersistedUser(session) : null;
@@ -24,7 +26,7 @@ export async function listOnEbay(input: {
 }): Promise<{ url?: string; error?: string }> {
   const session = await getSessionUser();
   if (!session) return { error: "Sign in first." };
-  const user = await resolvePersistedUser(session);
+  const user = await resolvePersistedUser(session, { skipRemoteIfEbay: true });
   if (!user) return { error: "Account not found. Log out and log in, then try again." };
   if (!user.ebayRefreshToken) return { error: "Connect eBay on this page first." };
   const item = getItem(input.catalogId);

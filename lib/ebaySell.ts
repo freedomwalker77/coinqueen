@@ -150,7 +150,7 @@ async function ebayFetch(token: string, path: string, init?: RequestInit) {
         });
       },
     );
-    req.setTimeout(12_000, () => {
+    req.setTimeout(20_000, () => {
       req.destroy();
       reject(new Error("eBay timed out."));
     });

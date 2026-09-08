@@ -4,9 +4,13 @@ import type { SessionUser } from "./definitions";
 import { findUserById, findUserByShopSlug, upsertUser, type UserRecord } from "./db";
 import { loadGhlAccount } from "./ghl";
 
-export async function resolvePersistedUser(session: SessionUser): Promise<UserRecord | null> {
+export async function resolvePersistedUser(
+  session: SessionUser,
+  options?: { skipRemoteIfEbay?: boolean },
+): Promise<UserRecord | null> {
   const local =
     findUserById(session.id) ?? (session.shopSlug ? findUserByShopSlug(session.shopSlug) : undefined) ?? null;
+  if (options?.skipRemoteIfEbay && local?.ebayRefreshToken) return local;
   const remote = session.email ? await loadGhlAccount(session.email) : null;
   if (!local && !remote) return null;
   const base = remote ?? local!;

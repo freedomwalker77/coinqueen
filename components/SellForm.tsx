@@ -63,7 +63,7 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
                 imageUrl: photoUrl,
               }),
               new Promise<{ error: string }>((resolve) => {
-                setTimeout(() => resolve({ error: "eBay took too long. Your shop listing still published." }), 15_000);
+                setTimeout(() => resolve({ error: "eBay took too long. Your shop listing still published." }), 45_000);
               }),
             ]);
             if ("error" in result && result.error) ebayError = result.error;
