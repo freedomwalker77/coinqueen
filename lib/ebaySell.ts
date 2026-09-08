@@ -1,6 +1,5 @@
 import "server-only";
 
-import https from "node:https";
 import type { CatalogItem } from "./catalog";
 import type { UserRecord } from "./db";
 import { updateUser } from "./db";
@@ -115,59 +114,21 @@ async function userAccessToken(user: UserRecord) {
 }
 
 async function ebayFetch(token: string, path: string, init?: RequestInit) {
-  const url = new URL(`${ebayApi()}${path}`);
-  const body = typeof init?.body === "string" ? init.body : undefined;
-  const method = (init?.method || "GET").toUpperCase();
-  const headers: Record<string, string> = {
-    Authorization: `Bearer ${token}`,
-    Accept: "application/json",
-    "X-EBAY-C-MARKETPLACE-ID": ebayMarketplace(),
-  };
-  if (body) {
-    headers["Content-Type"] = "application/json";
-    headers["Content-Language"] = "en-US";
-    headers["Content-Length"] = String(Buffer.byteLength(body));
-  }
+  const headers = new Headers();
+  headers.set("Authorization", `Bearer ${token}`);
+  headers.set("Accept", "application/json");
+  headers.set("Accept-Language", "en-US");
+  headers.set("Content-Language", "en-US");
+  headers.set("X-EBAY-C-MARKETPLACE-ID", ebayMarketplace());
+  if (init?.body) headers.set("Content-Type", "application/json");
 
-  const request = new Promise<Response>((resolve, reject) => {
-    const req = https.request(
-      {
-        hostname: url.hostname,
-        port: 443,
-        path: `${url.pathname}${url.search}`,
-        method,
-        headers,
-        family: 4,
-        timeout: 8_000,
-      },
-      (res) => {
-        const chunks: Buffer[] = [];
-        res.on("data", (chunk) => chunks.push(chunk));
-        res.on("end", () => {
-          resolve(
-            new Response(Buffer.concat(chunks), {
-              status: res.statusCode ?? 500,
-              statusText: res.statusMessage,
-            }),
-          );
-        });
-      },
-    );
-    req.on("timeout", () => {
-      req.destroy();
-      reject(new Error("eBay timed out."));
-    });
-    req.on("error", reject);
-    if (body) req.write(body);
-    req.end();
+  return fetch(`${ebayApi()}${path}`, {
+    method: init?.method || "GET",
+    headers,
+    body: init?.body,
+    cache: "no-store",
+    signal: AbortSignal.timeout(12_000),
   });
-
-  return Promise.race([
-    request,
-    new Promise<Response>((_, reject) => {
-      setTimeout(() => reject(new Error("eBay timed out.")), 8_000);
-    }),
-  ]);
 }
 
 function categoryId(item: CatalogItem) {
