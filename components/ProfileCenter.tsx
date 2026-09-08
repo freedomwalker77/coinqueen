@@ -151,7 +151,7 @@ export function ProfileCenter() {
 
             <Card
               title="eBay"
-              blurb="Cross-post lots from Sell using your seller policies."
+              blurb="Cross-post lots from Sell. Also list on eBay is $14.97 a month."
               action={
                 data.ebayConnected ? (
                   <button
@@ -176,6 +176,9 @@ export function ProfileCenter() {
                   </span>
                 </p>
                 <p className="mt-1 text-cream/55">Site: {data.ebayMarketplace}</p>
+                <p className="mt-1 text-cream/55">
+                  Also list on eBay: {data.ebaySubscribed ? "Subscribed" : "$14.97/month on eBay tools"}
+                </p>
               </div>
               <Link href="/sell" className="mt-3 inline-flex text-sm text-gold hover:underline">
                 Open eBay tools

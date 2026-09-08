@@ -31,7 +31,7 @@ const selling = [
   { href: "/listings?kind=auction", label: "My auctions", d: "M8 6l8 4M9 20h6M12 10v10M7 8l10 5" },
   { href: "/orders?role=seller", label: "Seller orders", d: "M8 5h8v3H8zM6 8h12v11H6zM9 12h6" },
   { href: "/chests", label: "Mystery chests", d: "M4 10h16v8H4zM4 10V8h16v2M12 8v10" },
-  { href: "/sell", label: "eBay tools", d: "M4 8h16M6 8v10h12V8M9 12h6" },
+  { href: "/sell", label: "eBay tools", d: "M4 8h16M6 8v10h12V8M9 12h6", extra: "$14.97/mo" },
   { href: "/ambassador", label: "Ambassador", d: "M12 4v16M8 8h8M7 16h10", extra: "Earn 1%" },
 ];
 

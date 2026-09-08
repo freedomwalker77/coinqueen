@@ -7,7 +7,13 @@ import { catalog, formatMoney, getItem } from "@/lib/catalog";
 import { useMarket } from "@/lib/localMarket";
 import type { ListingKind } from "@/lib/market";
 
-export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean }) {
+export function SellForm({
+  ebayConnected = false,
+  ebaySubscribed = false,
+}: {
+  ebayConnected?: boolean;
+  ebaySubscribed?: boolean;
+}) {
   const params = useSearchParams();
   const router = useRouter();
   const preset = params.get("item") ?? catalog[0]?.id ?? "";
@@ -183,13 +189,17 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
             <input
               type="checkbox"
               checked={alsoEbay}
-              disabled={!ebayConnected}
+              disabled={!ebayConnected || !ebaySubscribed}
               onChange={(event) => setAlsoEbay(event.target.checked)}
             />
             Also list on eBay (fixed price)
           </label>
           {!ebayConnected ? (
             <p className="text-sm text-cream/45">Sign in with eBay above to enable cross-posting.</p>
+          ) : !ebaySubscribed ? (
+            <p className="text-sm text-cream/45">
+              Subscribe above ($14.97/month) to unlock Also list on eBay.
+            </p>
           ) : null}
         </>
       )}

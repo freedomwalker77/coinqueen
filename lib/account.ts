@@ -37,5 +37,9 @@ export async function resolvePersistedUser(
     referralCode: local?.referralCode || remote?.referralCode,
     referredBy: local?.referredBy || remote?.referredBy,
     referralClicks: local?.referralClicks ?? remote?.referralClicks,
+    stripeCustomerId: local?.stripeCustomerId || remote?.stripeCustomerId,
+    ebayPlanSubscriptionId: local?.ebayPlanSubscriptionId || remote?.ebayPlanSubscriptionId,
+    ebayPlanStatus: local?.ebayPlanStatus || remote?.ebayPlanStatus,
+    ebayPlanPeriodEnd: local?.ebayPlanPeriodEnd ?? remote?.ebayPlanPeriodEnd,
   });
 }

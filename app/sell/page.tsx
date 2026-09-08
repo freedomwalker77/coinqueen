@@ -1,3 +1,4 @@
+import { applyEbayPlanReturn } from "@/app/actions/ebayPlan";
 import { getConnectStatus } from "@/app/actions/connect";
 import { getEbayStatus } from "@/app/actions/ebay";
 import { Footer, Header } from "@/components/Chrome";
@@ -13,11 +14,14 @@ export const maxDuration = 60;
 export default async function SellPage({
   searchParams,
 }: {
-  searchParams: Promise<{ connect?: string; ebay?: string; reason?: string }>;
+  searchParams: Promise<{ connect?: string; ebay?: string; reason?: string; ebay_plan?: string; session_id?: string }>;
 }) {
   const user = await getSessionUser();
   const params = await searchParams;
   const connect = params.connect;
+  if (user && params.ebay_plan === "success" && params.session_id) {
+    await applyEbayPlanReturn(params.session_id);
+  }
   const connectStatus = user ? await getConnectStatus() : null;
   const ebayStatus = user ? await getEbayStatus() : null;
 
@@ -28,8 +32,8 @@ export default async function SellPage({
         <p className="text-xs uppercase tracking-[0.22em] text-money">Sell</p>
         <h1 className="mt-2 font-serif text-4xl text-money">Open a listing</h1>
         <p className="mt-2 max-w-2xl text-cream/60">
-          Scan first if you need an ID, then publish a buy-now or auction into your shop. Optionally push the
-          same lot to eBay.
+          Scan first if you need an ID, then publish a buy-now or auction into your shop. Also list on eBay
+          is $14.97 a month after you connect eBay.
         </p>
         <div className="mt-8">
           {user ? (
@@ -43,10 +47,20 @@ export default async function SellPage({
                   again.
                 </p>
               ) : null}
+              {params.ebay_plan === "success" && ebayStatus?.subscribed ? (
+                <p className="mb-6 text-sm text-money">eBay listing plan is active. You can check Also list on eBay.</p>
+              ) : null}
+              {params.ebay_plan === "cancel" ? (
+                <p className="mb-6 text-sm text-cream/60">Checkout was cancelled. You can subscribe anytime.</p>
+              ) : null}
               {ebayStatus ? (
                 <ConnectEbay
                   configured={ebayStatus.configured}
                   connected={ebayStatus.connected}
+                  subscribed={ebayStatus.subscribed}
+                  planEnabled={ebayStatus.planEnabled}
+                  planStatus={ebayStatus.planStatus}
+                  planPeriodEnd={ebayStatus.planPeriodEnd}
                   marketplace={ebayStatus.marketplace}
                   sites={ebayStatus.sites}
                   status={params.ebay}
@@ -54,7 +68,10 @@ export default async function SellPage({
                 />
               ) : null}
               <Suspense fallback={<p className="text-cream/50">Loading form…</p>}>
-                <SellForm ebayConnected={ebayStatus?.connected ?? false} />
+                <SellForm
+                  ebayConnected={ebayStatus?.connected ?? false}
+                  ebaySubscribed={ebayStatus?.subscribed ?? false}
+                />
               </Suspense>
             </>
           ) : (

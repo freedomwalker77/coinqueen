@@ -32,6 +32,10 @@ export type UserRecord = {
   referralCode?: string;
   referredBy?: string;
   referralClicks?: number;
+  stripeCustomerId?: string;
+  ebayPlanSubscriptionId?: string;
+  ebayPlanStatus?: string;
+  ebayPlanPeriodEnd?: number;
 };
 
 type UsersFile = { users: UserRecord[] };
@@ -130,6 +134,10 @@ export function updateUser(
       | "referralCode"
       | "referredBy"
       | "referralClicks"
+      | "stripeCustomerId"
+      | "ebayPlanSubscriptionId"
+      | "ebayPlanStatus"
+      | "ebayPlanPeriodEnd"
     >
   >,
 ) {
@@ -193,6 +201,11 @@ export function deleteUser(id: string) {
   if (next.length === file.users.length) return false;
   writeUsers({ users: next });
   return true;
+}
+
+export function findUserByStripeCustomerId(customerId: string) {
+  if (!customerId) return undefined;
+  return readUsers().users.find((user) => user.stripeCustomerId === customerId);
 }
 
 export function findUserByReferralCode(code: string) {
