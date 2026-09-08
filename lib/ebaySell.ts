@@ -1,5 +1,6 @@
 import "server-only";
 
+import https from "node:https";
 import type { CatalogItem } from "./catalog";
 import type { UserRecord } from "./db";
 import { updateUser } from "./db";
@@ -29,10 +30,6 @@ function ebayAuthHost() {
 function ebayMarketplace() {
   const raw = (process.env.EBAY_MARKETPLACE || "EBAY_CA").toUpperCase();
   return raw.startsWith("EBAY_") ? raw : "EBAY_CA";
-}
-
-function contentLanguage() {
-  return "en-US";
 }
 
 function ebayClient() {
@@ -117,18 +114,45 @@ async function userAccessToken(user: UserRecord) {
 }
 
 async function ebayFetch(token: string, path: string, init?: RequestInit) {
-  return fetch(`${ebayApi()}${path}`, {
-    ...init,
-    headers: {
-      Authorization: `Bearer ${token}`,
-      "Content-Type": "application/json",
-      Accept: "application/json",
-      "Accept-Language": contentLanguage(),
-      "Content-Language": contentLanguage(),
-      "X-EBAY-C-MARKETPLACE-ID": ebayMarketplace(),
-      ...init?.headers,
-    },
-    cache: "no-store",
+  const url = new URL(`${ebayApi()}${path}`);
+  const body = typeof init?.body === "string" ? init.body : undefined;
+  const method = (init?.method || "GET").toUpperCase();
+  const headers: Record<string, string> = {
+    Authorization: `Bearer ${token}`,
+    Accept: "application/json",
+    "Accept-Language": "en-US",
+    "Content-Language": "en-US",
+    "X-EBAY-C-MARKETPLACE-ID": ebayMarketplace(),
+  };
+  if (body) {
+    headers["Content-Type"] = "application/json";
+    headers["Content-Length"] = String(Buffer.byteLength(body));
+  }
+
+  return new Promise<Response>((resolve, reject) => {
+    const req = https.request(
+      {
+        hostname: url.hostname,
+        path: `${url.pathname}${url.search}`,
+        method,
+        headers,
+      },
+      (res) => {
+        const chunks: Buffer[] = [];
+        res.on("data", (chunk) => chunks.push(chunk));
+        res.on("end", () => {
+          resolve(
+            new Response(Buffer.concat(chunks), {
+              status: res.statusCode ?? 500,
+              statusText: res.statusMessage,
+            }),
+          );
+        });
+      },
+    );
+    req.on("error", reject);
+    if (body) req.write(body);
+    req.end();
   });
 }
 
