@@ -42,8 +42,8 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
           setError("eBay needs a public https photo URL.");
           return;
         }
-        if (alsoEbay && /imgur\.com\/(a|gallery)\//i.test(photoUrl)) {
-          setError("That Imgur link is an album page. Open the photo, right-click it, Copy image address (i.imgur.com/…), then paste that.");
+        if (alsoEbay && /imgur\.com/i.test(photoUrl) && !/\/\/i\.imgur\.com\//i.test(photoUrl)) {
+          setError("Use the direct Imgur image: right-click the photo → Copy image address. It must start with https://i.imgur.com/");
           return;
         }
         setBusy(true);
@@ -51,36 +51,40 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
         const listingId = `user-${Date.now()}`;
         let ebayUrl: string | undefined;
         let ebayError: string | undefined;
-        try {
-          if (alsoEbay) {
-            const result = await listOnEbay({
-              listingId,
-              catalogId,
-              grade,
-              price: amount,
-              note,
-              imageUrl: photoUrl,
-            });
+        if (alsoEbay) {
+          try {
+            const result = await Promise.race([
+              listOnEbay({
+                listingId,
+                catalogId,
+                grade,
+                price: amount,
+                note,
+                imageUrl: photoUrl,
+              }),
+              new Promise<{ error: string }>((resolve) => {
+                setTimeout(() => resolve({ error: "eBay took too long. Your shop listing still published." }), 15_000);
+              }),
+            ]);
             if (result.error) ebayError = result.error;
             else ebayUrl = result.url;
+          } catch {
+            ebayError = "eBay took too long. Your shop listing still published.";
           }
-          const listing = publishListing({
-            id: listingId,
-            catalogId,
-            grade,
-            price: amount,
-            kind,
-            note,
-            ebayUrl,
-          });
-          const qs = new URLSearchParams({ listed: listing.id });
-          if (ebayUrl) qs.set("ebay", ebayUrl);
-          if (ebayError) qs.set("ebay_error", ebayError);
-          router.push(`/shop/${listing.shopSlug}?${qs.toString()}`);
-        } catch {
-          setError("Publishing stalled. Uncheck eBay and try again, or wait for the next deploy and retry.");
-          setBusy(false);
         }
+        const listing = publishListing({
+          id: listingId,
+          catalogId,
+          grade,
+          price: amount,
+          kind,
+          note,
+          ebayUrl,
+        });
+        const qs = new URLSearchParams({ listed: listing.id });
+        if (ebayUrl) qs.set("ebay", ebayUrl);
+        if (ebayError) qs.set("ebay_error", ebayError);
+        router.push(`/shop/${listing.shopSlug}?${qs.toString()}`);
       }}
     >
       <label className="block text-sm text-cream/70">
@@ -149,7 +153,7 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
           value={photoUrl}
           onChange={(event) => setPhotoUrl(event.target.value)}
           className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
-          placeholder="https://…"
+          placeholder="https://i.imgur.com/….jpg"
         />
       </label>
       <label className="flex items-center gap-2 text-sm text-cream/80">

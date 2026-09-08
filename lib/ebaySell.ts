@@ -69,6 +69,7 @@ async function tokenRequest(body: string) {
     },
     body,
     cache: "no-store",
+    signal: AbortSignal.timeout(8000),
   });
   const json = (await response.json()) as {
     access_token?: string;
