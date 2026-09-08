@@ -123,6 +123,7 @@ export function useMarket() {
     note?: string;
     days?: number;
     ebayUrl?: string;
+    photoUrl?: string;
     id?: string;
   }) {
     const ends = new Date();
@@ -138,6 +139,7 @@ export function useMarket() {
       bids: 0,
       note: input.note,
       ebayUrl: input.ebayUrl,
+      photoUrl: input.photoUrl,
       createdAt: new Date().toISOString(),
       seed: false,
     };
@@ -147,7 +149,7 @@ export function useMarket() {
 
   function updateListing(
     id: string,
-    patch: Partial<Pick<Listing, "catalogId" | "grade" | "price" | "kind" | "note" | "ebayUrl" | "endsAt">>,
+    patch: Partial<Pick<Listing, "catalogId" | "grade" | "price" | "kind" | "note" | "ebayUrl" | "photoUrl" | "endsAt">>,
   ) {
     update((prev) => ({
       ...prev,

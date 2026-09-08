@@ -54,7 +54,11 @@ export async function POST(request: Request) {
         "Photo saved, but GEMINI_API_KEY is empty in .env.local. Add a Google AI Studio key, restart npm run dev, then upload again.";
     }
 
-    const matches = await withSoldRows(matchCatalog(hints, vision ?? undefined), marketQueryFromVision(vision ?? undefined));
+    const limit = form.get("queue") ? 1 : 3;
+    const matches = await withSoldRows(
+      matchCatalog(hints, vision ?? undefined).slice(0, limit),
+      marketQueryFromVision(vision ?? undefined),
+    );
     if (matches.length === 0) {
       message =
         message ??

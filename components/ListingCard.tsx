@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { useState } from "react";
+import { listingPhotoSrc } from "@/lib/ebayImage";
 import { formatMoney } from "@/lib/catalog";
 import { getShop, isDemoShop, isSampleListing, listingWithItem, type Listing } from "@/lib/market";
 import { useMarket } from "@/lib/localMarket";
@@ -19,7 +20,17 @@ export function ListingCard({ listing }: { listing: Listing }) {
   return (
     <article className="overflow-hidden rounded-2xl border border-money/20 bg-queen shadow-sm">
       <Link href={`/item/${packed.item.id}`}>
-        <PieceArt id={packed.item.id} className="h-36 w-full" />
+        {listing.photoUrl ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={listing.photoUrl.startsWith("http") ? listingPhotoSrc(listing.photoUrl) : listing.photoUrl}
+            alt=""
+            referrerPolicy="no-referrer"
+            className="h-36 w-full object-cover"
+          />
+        ) : (
+          <PieceArt id={packed.item.id} className="h-36 w-full" />
+        )}
       </Link>
       <div className="space-y-3 p-4">
         <div className="flex items-center justify-between text-[11px] uppercase tracking-[0.18em] text-money">

@@ -21,6 +21,7 @@ export type Listing = {
   bids: number;
   note?: string;
   ebayUrl?: string;
+  photoUrl?: string;
   createdAt: string;
   seed: boolean;
 };

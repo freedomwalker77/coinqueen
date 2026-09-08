@@ -47,6 +47,7 @@ export function SellForm({
     setPrice(String(editing.price));
     setKind(editing.kind);
     setNote(editing.note ?? "");
+    setPhotoUrl(editing.photoUrl ?? "");
   }, [preset, editId, editing]);
 
   useEffect(() => {
@@ -61,11 +62,7 @@ export function SellForm({
         const amount = Number(price);
         if (!catalogId || !Number.isFinite(amount) || amount <= 0) return;
         if (alsoEbay && !/^https:\/\//i.test(photoUrl.trim())) {
-          setError("eBay needs a public https photo URL.");
-          return;
-        }
-        if (alsoEbay && /imgur\.com/i.test(photoUrl) && !/\/\/i\.imgur\.com\//i.test(photoUrl)) {
-          setError("Use the direct Imgur image: right-click the photo → Copy image address. It must start with https://i.imgur.com/");
+          setError("For eBay, publish from Scan and tap a similar listing photo. Your uploaded picture is fine for the shop.");
           return;
         }
         setBusy(true);
@@ -107,6 +104,7 @@ export function SellForm({
           kind,
           note,
           ebayUrl,
+          photoUrl: photoUrl || undefined,
         });
         const qs = new URLSearchParams({ listed: listing.id });
         if (ebayUrl) qs.set("ebay", ebayUrl);
@@ -177,14 +175,29 @@ export function SellForm({
       {editing ? null : (
         <>
           <label className="block text-sm text-cream/70">
-            Photo URL (https) — required for eBay
+            Photo
             <input
-              value={photoUrl}
-              onChange={(event) => setPhotoUrl(event.target.value)}
-              className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
-              placeholder="https://i.imgur.com/….jpg"
+              type="file"
+              accept="image/jpeg,image/png,image/webp"
+              className="mt-1 block w-full text-sm"
+              onChange={(event) => {
+                const file = event.target.files?.[0];
+                event.target.value = "";
+                if (!file) return;
+                const reader = new FileReader();
+                reader.onload = () => setPhotoUrl(String(reader.result || ""));
+                reader.readAsDataURL(file);
+              }}
             />
           </label>
+          {photoUrl ? (
+            // eslint-disable-next-line @next/next/no-img-element
+            <img src={photoUrl} alt="" className="h-24 w-24 rounded-xl object-cover" />
+          ) : null}
+          <p className="text-xs text-cream/45">
+            Upload a picture for your shop. To also list on eBay, use Scan and tap a similar eBay photo — no
+            Imgur.
+          </p>
           <label className="flex items-center gap-2 text-sm text-cream/80">
             <input
               type="checkbox"

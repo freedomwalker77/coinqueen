@@ -9,9 +9,9 @@ export default function ScanPage() {
         <p className="text-xs uppercase tracking-[0.22em] text-money">AI scanner</p>
         <h1 className="mt-2 font-serif text-4xl text-money">Identify & price</h1>
         <p className="mt-2 max-w-2xl text-cream/70">
-          On a phone, tap Take photo to snap a picture. Add MyVaultExchange to your home screen
-          (Safari Share → Add to Home Screen, or Chrome Install app) to use it like an app. The same
-          Scan page is the website and the phone app.
+          Take several photos in a row. Each one drops into the queue with an eBay price underneath. Tap a
+          thumbnail to swipe similar eBay listings and pick your scan photo or an eBay listing photo — no
+          Imgur.
         </p>
         <div className="mt-8">
           <Scanner
