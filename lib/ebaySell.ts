@@ -139,19 +139,70 @@ async function ebayFetch(
   });
 }
 
-function categoryId(item: CatalogItem) {
-  switch (item.category) {
-    case "us-coins":
-      return "11116";
-    case "world-coins":
-      return "39482";
-    case "ancient":
-      return "4734";
-    case "us-paper":
-    case "world-paper":
-      return "40080";
-    default:
-      return "11116";
+const treeIds = new Map<string, string>();
+
+function fallbackLeafCategoryId(item: CatalogItem) {
+  const text = `${item.name} ${item.series} ${item.denomination} ${item.keywords.join(" ")} ${item.country}`.toLowerCase();
+  if (item.category === "ancient") {
+    if (text.includes("greek")) return "4738";
+    if (text.includes("byzantine")) return "3364";
+    if (text.includes("roman")) return "4734";
+    return "532";
+  }
+  if (item.category === "us-paper") {
+    if (text.includes("silver certificate")) return "40032";
+    if (text.includes("gold certificate")) return "40030";
+    if (text.includes("confederate")) return "3414";
+    if (text.includes("national")) return "3419";
+    return "376";
+  }
+  if (item.category === "world-paper") {
+    if (text.includes("canada")) return "3425";
+    return "385";
+  }
+  if (item.category === "world-coins") {
+    if (text.includes("canada")) return "536";
+    return "257";
+  }
+  if (text.includes("wheat")) return "39455";
+  if (text.includes("lincoln memorial")) return "31373";
+  if (text.includes("morgan")) return "39464";
+  if (text.includes("peace dollar")) return "11980";
+  if (text.includes("buffalo")) return "139806";
+  if (text.includes("indian head") && (text.includes("cent") || text.includes("penny"))) return "41084";
+  if (text.includes("mercury")) return "41090";
+  if (text.includes("walking liberty")) return "41099";
+  if (text.includes("kennedy")) return "41102";
+  return "786";
+}
+
+async function suggestLeafCategoryId(token: string, marketplace: string, item: CatalogItem) {
+  try {
+    let treeId = treeIds.get(marketplace);
+    if (!treeId) {
+      const treeRes = await ebayFetch(
+        token,
+        `/commerce/taxonomy/v1/get_default_category_tree_id?marketplace_id=${marketplace}`,
+        { marketplace },
+      );
+      const treeJson = (await treeRes.json()) as { categoryTreeId?: string };
+      if (!treeRes.ok || !treeJson.categoryTreeId) return fallbackLeafCategoryId(item);
+      treeId = treeJson.categoryTreeId;
+      treeIds.set(marketplace, treeId);
+    }
+
+    const query = [item.year, item.name, item.series, item.country].filter(Boolean).join(" ");
+    const sugRes = await ebayFetch(
+      token,
+      `/commerce/taxonomy/v1/category_tree/${treeId}/get_category_suggestions?q=${encodeURIComponent(query)}`,
+      { marketplace },
+    );
+    const sugJson = (await sugRes.json()) as {
+      categorySuggestions?: Array<{ category?: { categoryId?: string } }>;
+    };
+    return sugJson.categorySuggestions?.[0]?.category?.categoryId || fallbackLeafCategoryId(item);
+  } catch {
+    return fallbackLeafCategoryId(item);
   }
 }
 
@@ -282,6 +333,7 @@ async function publishToEbayInner(input: {
   if (!locationKey) {
     return { error: `No eBay inventory location for ${site.label}. Add a business location in Seller Hub.` };
   }
+  const categoryId = await suggestLeafCategoryId(token, marketplace, input.item);
 
   const itemRes = await ebayFetch(token, `/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`, {
     method: "PUT",
@@ -309,7 +361,7 @@ async function publishToEbayInner(input: {
       marketplaceId: marketplace,
       format: "FIXED_PRICE",
       availableQuantity: 1,
-      categoryId: categoryId(input.item),
+        categoryId,
       listingDescription: description,
       listingPolicies: policies,
       merchantLocationKey: locationKey,
