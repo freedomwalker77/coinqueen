@@ -113,19 +113,22 @@ async function userAccessToken(user: UserRecord) {
   return token.accessToken;
 }
 
-async function ebayFetch(token: string, path: string, init?: RequestInit) {
+async function ebayFetch(token: string, path: string, init?: RequestInit & { marketplace?: string }) {
+  const { marketplace: marketplaceOverride, ...rest } = init ?? {};
+  const marketplace = marketplaceOverride ?? ebayMarketplace();
+  const locale = marketplace === "EBAY_CA" ? "en-CA" : "en-US";
   const headers = new Headers();
   headers.set("Authorization", `Bearer ${token}`);
   headers.set("Accept", "application/json");
-  headers.set("Accept-Language", "en-US");
-  headers.set("Content-Language", "en-US");
-  headers.set("X-EBAY-C-MARKETPLACE-ID", ebayMarketplace());
-  if (init?.body) headers.set("Content-Type", "application/json");
+  headers.set("Accept-Language", locale);
+  headers.set("Content-Language", locale);
+  headers.set("X-EBAY-C-MARKETPLACE-ID", marketplace);
+  if (rest.body) headers.set("Content-Type", "application/json");
 
   return fetch(`${ebayApi()}${path}`, {
-    method: init?.method || "GET",
+    ...rest,
+    method: rest.method || "GET",
     headers,
-    body: init?.body,
     cache: "no-store",
     signal: AbortSignal.timeout(12_000),
   });
@@ -152,7 +155,9 @@ async function firstPolicyId(
   kind: "fulfillment_policy" | "payment_policy" | "return_policy",
   marketplace: string,
 ) {
-  const response = await ebayFetch(token, `/sell/account/v1/${kind}?marketplace_id=${marketplace}`);
+  const response = await ebayFetch(token, `/sell/account/v1/${kind}?marketplace_id=${marketplace}`, {
+    marketplace,
+  });
   const json = (await response.json()) as Record<
     string,
     Array<{ fulfillmentPolicyId?: string; paymentPolicyId?: string; returnPolicyId?: string }>
@@ -173,8 +178,8 @@ async function policiesFor(token: string, marketplace: string) {
   return { fulfillmentPolicyId, paymentPolicyId, returnPolicyId };
 }
 
-async function firstLocationKey(token: string) {
-  const response = await ebayFetch(token, "/sell/inventory/v1/location?limit=20");
+async function firstLocationKey(token: string, marketplace: string) {
+  const response = await ebayFetch(token, "/sell/inventory/v1/location?limit=20", { marketplace });
   const json = (await response.json()) as {
     locations?: Array<{ merchantLocationKey?: string; merchantLocationStatus?: string }>;
   };
@@ -224,14 +229,7 @@ async function publishToEbayInner(input: {
   const marketplaces = preferred === "EBAY_CA" ? ["EBAY_CA", "EBAY_US"] : [preferred, "EBAY_CA", "EBAY_US"];
   const uniqueMarketplaces = [...new Set(marketplaces)];
 
-  const locationKey = await firstLocationKey(token);
-  if (!locationKey) {
-    return {
-      error:
-        "No eBay inventory location yet. In Seller Hub, add a business location (or create an inventory location), then try again.",
-    } as const;
-  }
-
+  let lastError = "eBay could not create an offer on eBay.ca or eBay.com.";
   const sku = `mve${Date.now()}`.slice(0, 50);
   const title = `${input.item.shortName} ${input.grade}`.slice(0, 80);
   const description = [input.item.description, input.note, `Grade: ${input.grade}`, "Listed from MyVaultExchange."]
@@ -239,30 +237,41 @@ async function publishToEbayInner(input: {
     .join("\n\n")
     .slice(0, 4000);
 
-  const itemRes = await ebayFetch(token, `/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`, {
-    method: "PUT",
-    body: JSON.stringify({
-      availability: { shipToLocationAvailability: { quantity: 1 } },
-      condition: "USED_EXCELLENT",
-      product: {
-        title,
-        description,
-        imageUrls: [image],
-      },
-    }),
-  });
-  if (!itemRes.ok) {
-    const text = await itemRes.text();
-    return { error: `eBay could not save the item (${itemRes.status}): ${text.slice(0, 240)}` as const };
-  }
-
-  let lastError = "eBay could not create an offer on eBay.ca or eBay.com.";
   for (const marketplace of uniqueMarketplaces) {
     const policies = await policiesFor(token, marketplace);
-    if (!policies) continue;
+    if (!policies) {
+      lastError = `eBay is missing Payment, Return, or Shipping policies for ${marketplace}.`;
+      continue;
+    }
+    const locationKey = await firstLocationKey(token, marketplace);
+    if (!locationKey) {
+      lastError = `No eBay inventory location for ${marketplace}. Add a business location in Seller Hub.`;
+      continue;
+    }
+
+    const itemRes = await ebayFetch(token, `/sell/inventory/v1/inventory_item/${encodeURIComponent(sku)}`, {
+      method: "PUT",
+      marketplace,
+      body: JSON.stringify({
+        availability: { shipToLocationAvailability: { quantity: 1 } },
+        condition: "USED_EXCELLENT",
+        product: {
+          title,
+          description,
+          imageUrls: [image],
+        },
+      }),
+    });
+    if (!itemRes.ok) {
+      const text = await itemRes.text();
+      lastError = `eBay could not save the item on ${marketplace} (${itemRes.status}): ${text.slice(0, 200)}`;
+      continue;
+    }
+
     const currency = marketplace === "EBAY_CA" ? "CAD" : "USD";
     const offerRes = await ebayFetch(token, "/sell/inventory/v1/offer", {
       method: "POST",
+      marketplace,
       body: JSON.stringify({
         sku,
         marketplaceId: marketplace,
@@ -287,6 +296,7 @@ async function publishToEbayInner(input: {
 
     const pubRes = await ebayFetch(token, `/sell/inventory/v1/offer/${offerJson.offerId}/publish`, {
       method: "POST",
+      marketplace,
       body: "{}",
     });
     const pubJson = (await pubRes.json()) as { listingId?: string; errors?: Array<{ message?: string }> };
