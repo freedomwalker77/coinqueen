@@ -1,7 +1,7 @@
 "use client";
 
-import { logout } from "@/app/actions/auth";
 import { getAccount } from "@/app/actions/market";
+import { AccountMenu } from "@/components/AccountMenu";
 import type { SessionUser } from "@/lib/definitions";
 import Link from "next/link";
 import { useEffect, useState } from "react";
@@ -36,19 +36,5 @@ export function AuthStatus() {
     );
   }
 
-  return (
-    <div className="flex items-center gap-2">
-      <Link href={`/shop/${user.shopSlug}`} className="max-w-28 truncate px-2 text-cream/75 hover:text-gold">
-        {user.name}
-      </Link>
-      <form action={logout}>
-        <button
-          type="submit"
-          className="rounded-full px-3 py-1.5 text-cream/75 hover:bg-gold/10 hover:text-gold"
-        >
-          Log out
-        </button>
-      </form>
-    </div>
-  );
+  return <AccountMenu user={user} />;
 }

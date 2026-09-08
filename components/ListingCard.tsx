@@ -10,7 +10,7 @@ import { PieceArt } from "./PieceArt";
 export function ListingCard({ listing }: { listing: Listing }) {
   const packed = listingWithItem(listing);
   const shop = getShop(listing.shopSlug);
-  const { addToCart, placeBid, state } = useMarket();
+  const { addToCart, placeBid, state, deleteListing, mine } = useMarket();
   const [bid, setBid] = useState("");
   const [message, setMessage] = useState("");
   if (!packed) return null;
@@ -41,6 +41,25 @@ export function ListingCard({ listing }: { listing: Listing }) {
           <a href={listing.ebayUrl} className="text-sm text-gold hover:underline" target="_blank" rel="noreferrer">
             View on eBay
           </a>
+        ) : null}
+        {mine(listing) ? (
+          <div className="flex gap-2">
+            <Link
+              href={`/sell?edit=${encodeURIComponent(listing.id)}`}
+              className="rounded-full border border-money/25 px-3 py-1.5 text-sm text-cream hover:border-gold"
+            >
+              Edit
+            </Link>
+            <button
+              type="button"
+              onClick={() => {
+                if (window.confirm("Remove this listing from your shop?")) deleteListing(listing.id);
+              }}
+              className="rounded-full border border-red-200 px-3 py-1.5 text-sm text-red-700 hover:bg-red-50"
+            >
+              Delete
+            </button>
+          </div>
         ) : null}
         <p className="text-xs text-cream/45">
           {listing.kind === "auction" ? "Auction" : "Buy now"} · {listing.grade}

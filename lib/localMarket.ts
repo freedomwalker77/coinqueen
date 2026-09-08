@@ -50,9 +50,22 @@ export function useMarket() {
       if (user) {
         const merged = await loadAccountMarket(local);
         if (cancelled) return;
-        const next = merged ?? local;
+        let next = merged ?? local;
+        if (!localStorage.getItem("myvaultexchange-cleared-posted-v1")) {
+          next = {
+            ...next,
+            listings: next.listings.filter(
+              (row) => isSampleListing(row) || row.shopSlug !== user.shopSlug,
+            ),
+            cart: next.cart.filter((id) =>
+              next.listings.some((row) => row.id === id) || id.startsWith("seed-"),
+            ),
+          };
+          localStorage.setItem("myvaultexchange-cleared-posted-v1", "1");
+        }
         persist(next);
         setState(next);
+        void saveAccountMarket(next);
       } else {
         setState(local);
       }
@@ -74,6 +87,10 @@ export function useMarket() {
     persist(next);
     setState(next);
     if (account) void saveAccountMarket(next);
+  }
+
+  function mine(listing: Listing) {
+    return Boolean(account && listing.shopSlug === account.shopSlug && !isSampleListing(listing));
   }
 
   const listings = liveListings(state);
@@ -126,6 +143,40 @@ export function useMarket() {
     };
     update((prev) => ({ ...prev, listings: [listing, ...prev.listings] }));
     return listing;
+  }
+
+  function updateListing(
+    id: string,
+    patch: Partial<Pick<Listing, "catalogId" | "grade" | "price" | "kind" | "note" | "ebayUrl" | "endsAt">>,
+  ) {
+    update((prev) => ({
+      ...prev,
+      listings: prev.listings.map((row) => {
+        if (row.id !== id || isSampleListing(row) || (account && row.shopSlug !== account.shopSlug)) {
+          return row;
+        }
+        const kind = patch.kind ?? row.kind;
+        const endsAt =
+          kind === "auction"
+            ? (patch.endsAt ?? row.endsAt ?? new Date(Date.now() + 3 * 86400000).toISOString())
+            : undefined;
+        return { ...row, ...patch, kind, endsAt };
+      }),
+    }));
+  }
+
+  function deleteListing(id: string) {
+    update((prev) => {
+      const target = prev.listings.find((item) => item.id === id);
+      if (!target || isSampleListing(target) || (account && target.shopSlug !== account.shopSlug)) {
+        return prev;
+      }
+      return {
+        ...prev,
+        listings: prev.listings.filter((item) => item.id !== id),
+        cart: prev.cart.filter((cartId) => cartId !== id),
+      };
+    });
   }
 
   function addToCart(listingId: string) {
@@ -196,6 +247,9 @@ export function useMarket() {
     addToCollection,
     removeFromCollection,
     publishListing,
+    updateListing,
+    deleteListing,
+    mine,
     addToCart,
     removeFromCart,
     placeBid,

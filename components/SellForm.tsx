@@ -2,7 +2,7 @@
 
 import { listOnEbay } from "@/app/actions/ebay";
 import { useRouter, useSearchParams } from "next/navigation";
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { catalog, formatMoney, getItem } from "@/lib/catalog";
 import { useMarket } from "@/lib/localMarket";
 import type { ListingKind } from "@/lib/market";
@@ -11,7 +11,9 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
   const params = useSearchParams();
   const router = useRouter();
   const preset = params.get("item") ?? catalog[0]?.id ?? "";
-  const { publishListing, shopSlug, account, ready } = useMarket();
+  const editId = params.get("edit");
+  const { publishListing, updateListing, listings, shopSlug, account, ready } = useMarket();
+  const editing = listings.find((row) => row.id === editId && !row.seed);
   const [catalogId, setCatalogId] = useState(preset);
   const [grade, setGrade] = useState("AU-50");
   const [price, setPrice] = useState("");
@@ -23,13 +25,27 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
   const [error, setError] = useState<string | null>(null);
   const item = useMemo(() => getItem(catalogId), [catalogId]);
 
-  useEffect(() => {
-    if (preset) setCatalogId(preset);
-  }, [preset]);
+  const hydratedEdit = useRef<string | null>(null);
 
   useEffect(() => {
-    if (item) setPrice(String(item.marketMid));
-  }, [item]);
+    if (!editId) {
+      hydratedEdit.current = null;
+      if (preset) setCatalogId(preset);
+      return;
+    }
+    if (hydratedEdit.current === editId) return;
+    if (!editing) return;
+    hydratedEdit.current = editId;
+    setCatalogId(editing.catalogId);
+    setGrade(editing.grade);
+    setPrice(String(editing.price));
+    setKind(editing.kind);
+    setNote(editing.note ?? "");
+  }, [preset, editId, editing]);
+
+  useEffect(() => {
+    if (item && !editing) setPrice(String(item.marketMid));
+  }, [item, editing]);
 
   return (
     <form
@@ -48,6 +64,11 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
         }
         setBusy(true);
         setError(null);
+        if (editing) {
+          updateListing(editing.id, { catalogId, grade, price: amount, kind, note });
+          router.push(`/shop/${shopSlug}?listed=${editing.id}`);
+          return;
+        }
         const listingId = `user-${Date.now()}`;
         let ebayUrl: string | undefined;
         let ebayError: string | undefined;
@@ -147,34 +168,38 @@ export function SellForm({ ebayConnected = false }: { ebayConnected?: boolean })
           placeholder="Original surfaces, light hairlines, original envelope…"
         />
       </label>
-      <label className="block text-sm text-cream/70">
-        Photo URL (https) — required for eBay
-        <input
-          value={photoUrl}
-          onChange={(event) => setPhotoUrl(event.target.value)}
-          className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
-          placeholder="https://i.imgur.com/….jpg"
-        />
-      </label>
-      <label className="flex items-center gap-2 text-sm text-cream/80">
-        <input
-          type="checkbox"
-          checked={alsoEbay}
-          disabled={!ebayConnected}
-          onChange={(event) => setAlsoEbay(event.target.checked)}
-        />
-        Also list on eBay (fixed price)
-      </label>
-      {!ebayConnected ? (
-        <p className="text-sm text-cream/45">Sign in with eBay above to enable cross-posting.</p>
-      ) : null}
+      {editing ? null : (
+        <>
+          <label className="block text-sm text-cream/70">
+            Photo URL (https) — required for eBay
+            <input
+              value={photoUrl}
+              onChange={(event) => setPhotoUrl(event.target.value)}
+              className="mt-1 w-full rounded-xl border border-money/20 bg-queen px-3 py-2 text-cream"
+              placeholder="https://i.imgur.com/….jpg"
+            />
+          </label>
+          <label className="flex items-center gap-2 text-sm text-cream/80">
+            <input
+              type="checkbox"
+              checked={alsoEbay}
+              disabled={!ebayConnected}
+              onChange={(event) => setAlsoEbay(event.target.checked)}
+            />
+            Also list on eBay (fixed price)
+          </label>
+          {!ebayConnected ? (
+            <p className="text-sm text-cream/45">Sign in with eBay above to enable cross-posting.</p>
+          ) : null}
+        </>
+      )}
       {error ? <p className="text-sm text-red-700">{error}</p> : null}
       <button
         type="submit"
         disabled={busy}
         className="rounded-full bg-gold px-6 py-3 font-medium text-queen-ink hover:bg-gold-bright disabled:opacity-60"
       >
-        {busy ? "Publishing…" : alsoEbay ? "Publish here and on eBay" : "Publish listing"}
+        {busy ? "Saving…" : editing ? "Save listing" : alsoEbay ? "Publish here and on eBay" : "Publish listing"}
       </button>
       <p className="text-sm text-cream/45">
         {ready && account
