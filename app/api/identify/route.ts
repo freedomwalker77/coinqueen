@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getItem, type PieceType } from "@/lib/catalog";
+import { visionConfigured } from "@/lib/gemini";
 import { identifyWithGemini, matchCatalog, type IdentifyHints, type IdentifyMatch } from "@/lib/identify";
 import { liveComps, marketQueryFromVision } from "@/lib/liveComps";
 
@@ -45,13 +46,13 @@ export async function POST(request: Request) {
     let usedAi = false;
     let message: string | undefined;
 
-    if (image instanceof File && image.size > 0 && process.env.GEMINI_API_KEY) {
+    if (image instanceof File && image.size > 0 && visionConfigured()) {
       const buffer = Buffer.from(await image.arrayBuffer());
       vision = await identifyWithGemini(buffer.toString("base64"), image.type || "image/jpeg");
       usedAi = true;
-    } else if (image instanceof File && image.size > 0 && !process.env.GEMINI_API_KEY) {
+    } else if (image instanceof File && image.size > 0 && !visionConfigured()) {
       message =
-        "Photo saved, but GEMINI_API_KEY is empty in .env.local. Add a Google AI Studio key, restart npm run dev, then upload again.";
+        "Photo saved, but photo ID is off. Add OPENROUTER_API_KEY in .env.local (openrouter.ai/settings/keys), restart npm run dev, then scan again.";
     }
 
     const limit = form.get("queue") ? 1 : 3;

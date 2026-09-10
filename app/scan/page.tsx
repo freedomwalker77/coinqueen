@@ -1,5 +1,6 @@
 import { Footer, Header } from "@/components/Chrome";
 import { Scanner } from "@/components/Scanner";
+import { visionConfigured } from "@/lib/gemini";
 
 export default function ScanPage() {
   return (
@@ -15,7 +16,7 @@ export default function ScanPage() {
         </p>
         <div className="mt-8">
           <Scanner
-            photoIdReady={Boolean(process.env.GEMINI_API_KEY)}
+            photoIdReady={visionConfigured()}
             ebayReady={Boolean(
               (process.env.EBAY_CLIENT_ID || process.env.EBAY_APP_ID) && process.env.EBAY_CLIENT_SECRET,
             )}

@@ -1,5 +1,5 @@
 import { catalog, type CatalogItem, type PieceType } from "./catalog";
-import { geminiGenerate, parseJsonObject } from "./gemini";
+import { parseJsonObject, visionComplete, visionConfigured } from "./gemini";
 
 export type IdentifyHints = {
   year?: string;
@@ -113,23 +113,17 @@ export function matchCatalog(hints: IdentifyHints, vision?: VisionGuess, limit =
 }
 
 export async function identifyWithGemini(imageBase64: string, mimeType: string): Promise<VisionGuess | null> {
-  if (!process.env.GEMINI_API_KEY) return null;
+  if (!visionConfigured()) return null;
 
-  const prompt = `You identify collectible coins and paper money from a photo.
+  const prompt = `You identify collectible coins and paper money (banknotes) from a photo.
 Return ONLY compact JSON with keys:
 type ("coin" or "note"), name, year (string or empty), country, denomination, mint, metal, series, notes.
-If unsure, still guess the most likely circulating or collector type. No markdown.`;
+Read date, mint mark, denomination, and series if visible. If unsure, still guess the most likely circulating or collector type. No markdown.`;
 
-  const text = await geminiGenerate({
-    contents: [
-      {
-        parts: [
-          { text: prompt },
-          { inline_data: { mime_type: mimeType || "image/jpeg", data: imageBase64 } },
-        ],
-      },
-    ],
-    generationConfig: { temperature: 0.2 },
+  const text = await visionComplete({
+    prompt,
+    imageBase64,
+    mimeType: mimeType || "image/jpeg",
   });
   return parseJsonObject<VisionGuess>(text) ?? { notes: text.slice(0, 240) };
 }

@@ -568,8 +568,8 @@ export function Scanner({
     <div className="space-y-4">
       {!photoIdReady ? (
         <p className="rounded-2xl border border-gold/30 bg-queen-deep px-4 py-3 text-sm text-gold">
-          Photo ID is off until GEMINI_API_KEY is set. Uploads still queue; comps need the key to read the
-          picture.
+          Photo ID is off until OPENROUTER_API_KEY is set. Uploads still queue; comps need the key to read
+          the picture.
         </p>
       ) : null}
       {photoIdReady && !ebayReady ? (

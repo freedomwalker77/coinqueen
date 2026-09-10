@@ -2,7 +2,7 @@ import "server-only";
 
 import type { CatalogItem, Category, Comp } from "./catalog";
 import { EBAY_SOLD, HERITAGE, type CompFeed } from "./comps";
-import { geminiGenerate, parseJsonArray } from "./gemini";
+import { parseJsonArray, visionComplete, visionConfigured } from "./gemini";
 
 export type { CompFeed };
 
@@ -290,7 +290,7 @@ function httpImage(raw: string) {
 }
 
 async function fetchEbayListedFromSearch(query: string): Promise<Comp[]> {
-  if (!process.env.GEMINI_API_KEY || query.trim().length < 4) return [];
+  if (!visionConfigured() || query.trim().length < 4) return [];
   const prompt = `Use Google Search to find CURRENT eBay listings for sale matching: ${query}
 Prefer ebay.com and ebay.ca item pages (/itm/ with a numeric item id).
 Return ONLY a JSON array of up to 6 real listings, no markdown. Objects:
@@ -300,11 +300,7 @@ imageUrl must be the listing photo if search shows a thumbnail (often i.ebayimg.
 Do not invent item ids.`;
 
   try {
-    const text = await geminiGenerate({
-      contents: [{ parts: [{ text: prompt }] }],
-        tools: [{ googleSearch: {} }],
-      generationConfig: { temperature: 0.1 },
-    });
+    const text = await visionComplete({ prompt, webSearch: true });
     const rows: Comp[] = [];
     const seen = new Set<string>();
     for (const row of parseJsonArray<{
